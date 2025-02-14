@@ -1,0 +1,127 @@
+html{
+    background-color: grey;
+  }
+  .main-design{
+      width: 100vw;
+      height: 100vh;
+      background-repeat: no-repeat;
+      background-size:cover ; 
+      background-attachment: auto;   
+      background-image: url(../../assets/electricitys.jpg);
+  }
+  .btn-primary:disabled {   
+      background-color: grey !important;
+      cursor: not-allowed;
+  }
+//   .g20image{
+//     margin-top: 7em;
+//   }
+  .outboxx{
+    margin-top: 0%;
+  }
+  .alert-danger{
+      width: 25%;
+      margin: auto;
+  }
+  .center-box{
+      margin-left: auto;
+      margin-right: auto;
+      margin-top: 2%;
+      width: 460px;
+      padding: 20px;
+    //   background-color:  #0a0e16;
+    //   box-shadow: 0 5px 10px 0 #000000, 0 7px 24px 0 #000000;
+  }
+  .namm1{
+    font-size: 20px !important;
+    color: black;
+    margin-left: -70px;
+    margin-top: 10px;
+  }
+  ::ng-deep {
+    .gradient-border {
+      --b: 1px; /* border thickness */
+      --c: #0000 25%,silver 0; /* define the color here */
+      padding: 10px;
+      background:
+        conic-gradient(from 90deg  at top    var(--b) left  var(--b),var(--c)) 0    0,
+        conic-gradient(from 180deg at top    var(--b) right var(--b),var(--c)) 100% 0,
+        conic-gradient(from 0deg   at bottom var(--b) left  var(--b),var(--c)) 0    100%,
+        conic-gradient(from -90deg at bottom var(--b) right var(--b),var(--c)) 100% 100%;
+      background-size: 50px 50px; /* adjust border length here */
+      background-repeat: no-repeat;
+      transition: .6s;
+      cursor: pointer;
+    }
+    .gradient-border:hover {
+      background-size: 51% 51%;
+    }
+    #captcahCanvas{
+      width:180px !important;
+      height: 45px !important;
+    }
+    .captcha-container{
+      margin-top: 18px !important;
+      margin-bottom: 15px !important;
+      margin-left:55px !important;
+      box-shadow: none !important;
+    }
+    .cpt-btn{
+      color: #B4ACBC !important;
+    }
+    
+    .captcha-actions input[type=button]{
+      background: #fdb927 !important;
+      color: black !important;
+      cursor: pointer !important;
+    }
+  }
+  input[type=text]{
+      width: 90%;
+      
+      margin-left: 4%;
+      /*padding: 12px 20px;*/
+      height:30px;
+      display: inline-block;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    input[type=password]{
+      width: 90%;
+      margin-left: 4%;
+      /*padding: 12px 20px;*/
+      height: 30px;
+      display: inline-block;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    .text-color{
+      color:#33CCCC;
+    }
+    .btn-color{
+      background-color:#fdb927;
+      color: black;
+    }
+    .colob{
+    
+    color: black;
+    }
+    .trn{
+      color: transparent;
+    }
+    .fp:hover{
+      color: #fdb927;
+    }
+    .cc1{
+      width: 90%;
+      margin-left: 15px;
+    }
+
+    .imggg{
+  margin-left: 30px;
+  margin-top: 10px;
+    }
+
+  

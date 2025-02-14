@@ -1,0 +1,168 @@
+<div class="container-fluid"
+  style="width: 100vw;
+  height: 100vh;  background-image: url({{assetPath}}/electricitys.jpg);  background-size: cover; background-repeat: no-repeat; ">
+  <div class="container-fluid" style="width:100%; height:100%; ">
+
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <!-- <div class="container-fluid" style="width:100%; height:150px;">
+      <div class="container-fluid" style="width:100%; height:100%;">
+      </div>
+    </div> -->
+    <div class="container-fluid set text-center" style=" height:700px;" >
+      <br>
+         <div class="row text-center mb-2">
+          <div class="col-md-3 mt-2"> <img class="ml-5 mt-1" src="{{assetPath}}/electric.png" 
+              alt="C-DAC Mohali" height="102px" width="105px"></div>
+          <div class="col-md-9">
+            <!-- <img src="{{assetPath}}/images_and_logos/ews.png" alt="C-DAC Mohali" height="80px" width="200px"> -->
+            <br>
+            <br>
+            <b class="namm"> Electricity Power Limited</b>
+          </div>
+        </div>
+    <!-- <div class="container " style="height:45px; width:380px; font-family: Arial, Helvetica, sans-serif ;">
+      <p class="reg" style=" font-size:21px; color:#FDB927 !important; margin-top:15px; text-align: center;"><b style="color: #FDB927;">Registration</b></p>
+    </div> -->
+
+
+      
+
+      <form [formGroup]="signUpForm" #sign="ngForm">
+        <div class="fieldd">
+          <input type="text" style="width:99%; height:30px;" placeholder="Name" formControlName="name" autocomplete="off" />
+
+        </div>
+        <div style="height:7px; width:100%;margin-top:2px;">
+        <mat-error   class="error" *ngIf="(signupSubmitted || f.name.touched) && f.name.errors?.required">
+          Name is Required
+        </mat-error>
+        <mat-error class="error" *ngIf="f.name.errors?.pattern">
+          Name should be Alphanumeric only.
+        </mat-error>
+      </div>
+
+        <div class="fieldd">
+          <input type="text" style="width:99%; height:30px; margin-top:15px; " placeholder="Enter Username" formControlName="username" autocomplete="off" />
+
+        </div>
+        <div style="height:7px; width:100%;margin-top:2px;">
+        <mat-error class="error" *ngIf="(signupSubmitted || f.username.touched) && f.username.errors?.required">
+          Username is Required
+        </mat-error>
+        <mat-error class="error" *ngIf="f.username.errors?.pattern">
+          Username should be Alphanumeric only
+        </mat-error>
+      </div>
+
+        <div class="fieldd">
+          <input type="email" style="width:99%; height:30px; margin-top:15px; " placeholder="Email" formControlName="email" autocomplete="off" />
+
+        </div>
+
+      <div style="height: 7px; width: 100%; margin-top: 2px;">
+        <mat-error class="error" *ngIf="(signupSubmitted || f.email.touched) && f.email?.errors?.required">
+          Email is Required
+        </mat-error>
+
+        <mat-error class="error" *ngIf="f.email.errors?.pattern?.requiredPattern">
+          Invalid Email Pattern
+        </mat-error>
+
+      </div>
+
+      <div class="fieldd" style="margin-top: 15px;">
+
+      </div>
+
+        <div  class="fieldd" >
+          <input #id2change1 type="hidden" id="Password" class="pass-i" name="password" formControlName="password"
+            autocomplete="off" (change)="myEncryption($event)"  >
+          <input #id2change type="password" id="orgPassword" class="pass-i" name="orgPassword"
+            autocomplete="new-password" autocomplete="off" placeholder="Password" formControlName="orgPassword" readonly
+            onfocus="this.removeAttribute('readonly');" (change)="myEncryption($event)" style="width:99%; height:30px;  ">
+
+         
+          
+          <i class="fa fa-info-circle cpointer"
+            title="Must contain min 8 characters and one letter, Must have one uppercase and one lowercase character."  style="float: right; margin-right: -15px; margin-top: 10px;"></i>
+          
+        </div>
+        <div style="height: 7px; width: 100%; margin-top: 2px;">
+        <mat-error class="error" *ngIf="f.orgPassword.errors?.minLength">
+          Password must be more than seven characters long.
+        </mat-error>
+
+        <mat-error class="error" *ngIf="(signupSubmitted || f.password.touched) && f.password?.errors?.required">
+          Password is Required
+        </mat-error>
+        <mat-error class="error" *ngIf="f.password.errors?.pattern?.requiredPattern">
+          Invalid password Pattern
+        </mat-error>
+        </div>
+        
+        
+
+       <div class="fieldd" style="margin-top: 15px;">
+
+       </div>
+          
+        <div class="fieldd" >
+          <input #confirmpassword1 type="hidden" id="encCpassword" name="encCpassword" formControlName="encCpassword"
+            autocomplete="off" (change)="encConfirmPassword($event)">
+          <input #confirmpassword type="password" id="cpassword" name="cpassword" autocomplete="off"
+            placeholder="Confirm Password" formControlName="cpassword" readonly
+            onfocus="this.removeAttribute('readonly');" (change)="encConfirmPassword($event)"
+            style="width: 99%; height: 30px; ">
+        </div>
+        
+          <div style="height: 10px; width: 100%; margin-top: 2px; ">
+          <mat-error class="error" *ngIf="(signupSubmitted || f.cpassword.touched) && f.cpassword.invalid">
+            Confirm Password is Required
+          </mat-error>
+          <mat-error class="error" *ngIf="f.cpassword.errors?.pattern?.requiredPattern">
+            Invalid Confirm Password Pattern
+          </mat-error>
+          <mat-error class="error" *ngIf="f.cpassword.errors?.minLength">
+            Password must be more than seven characters long.
+          </mat-error>
+        </div>
+      
+        <br>
+        <!-- <div style="transform:scale(0.75); transform-origin:0 0; margin-left: 19%; margin-top: 15px; margin-top: -1px;" class="fieldd"  >
+          <re-captcha (resolved)="resolved($event)" [siteKey]="siteKey"></re-captcha>
+        </div> -->
+
+        <div class="fieldd">
+          <button class="btn btn-color cc1" [disabled]="!sign.valid" (click)="signup()" style="width:99%; ">Sign Up</button>
+        </div>
+        <br>
+        <!-- <button (click)="signup()">Sign Up</button> -->
+        <div class="row">
+          <div class="col-md-2"></div>
+          <div class="col-md-8">
+            
+              <p style="color: white;">Already a member? <a href="login()"><b style="color: #007BFF;">Sign in</b></a></p>
+            
+
+          </div>
+          <div class="col-md-2">
+           
+          </div>
+          
+        </div>
+      </form>
+    </div>
+  </div>
+  <!-- <div class="register" (click)="login()">
+      Login Here >
+  </div> -->
+
+  <!-- <app-footer class="fixed-bottom" class="fieldd"></app-footer> -->
+
+</div>

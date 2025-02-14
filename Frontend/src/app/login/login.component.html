@@ -1,0 +1,67 @@
+<div class="main-design text-center">
+    <br>
+        <br>
+        <br>
+        <br>
+        <br>
+    <div class="outboxx">
+        
+      <div class="center-box ">
+        <div class="row text-center mb-2">
+          <div class="col-md-4 mt-2"> <img class="imggg" src="{{assetPath}}/electric.png" 
+              alt="C-DAC Mohali" height="102px" width="105px "></div>
+          <div class="col-md-8">
+            <!-- <img src="{{assetPath}}/images_and_logos/ews.png" alt="C-DAC Mohali" height="80px" width="200px"> -->
+            <br>
+            <br>
+            <b class="namm1"> Electricity Power Limited</b>
+          </div>
+        </div>
+        
+        <form [formGroup]="loginForm" #f="ngForm" autocomplete="off" readonly>
+          <div>
+            <input type="text" name="username" autocomplete="one-time-code" autocomplete="off" formControlName="username"
+              placeholder="Enter Username" readonly onfocus="this.removeAttribute('readonly');">
+          </div>
+          <div>
+            <input #id2change1 type="hidden" id="Password" class="mt-4" name="password" formControlName="password"
+              autocomplete="off" (change)="myEncryption($event)">
+            <input #id2change type="password" id="orgPassword" class="mt-4" name="orgPassword" autocomplete="new-password"
+              autocomplete="off" placeholder="Enter Password" formControlName="orgPassword" readonly
+              onfocus="this.removeAttribute('readonly');" (change)="myEncryption($event)">
+          </div>
+          <br>
+          <!-- <div style="transform:scale(0.75); transform-origin:0 0; margin-left: 23%;">
+            <re-captcha (resolved)="resolved($event)" [siteKey]="siteKey"></re-captcha>
+          </div> -->
+  
+          <button class="btn btn-color cc1" [disabled]="!f.valid" (click)="login()"> Login <i *ngIf="loading"
+              class="fa fa-spinner fa-spin colob"></i></button>
+          <div class="row">
+            <div class="col-md-3">
+               
+              <div class="button-class colo" routerLink="/signup">
+                <br>
+                <p style="color: #007BFF;"> Sign Up </p>
+              </div>
+            </div>
+            <div class="col-md-4"></div>
+            <div class="col-md-5">
+                <br>
+              <div class="button-class colo mb-1" (click)="forgotPassword()">
+                <p style="color: #007BFF;"> Forgot password ? </p>
+              </div>
+  
+            </div>
+          </div>
+        </form>
+  
+        
+  
+      </div>
+    </div>
+  
+
+  
+  
+  </div>

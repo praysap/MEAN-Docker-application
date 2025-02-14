@@ -1,0 +1,104 @@
+
+ <div class="container-fluid">
+    <div class="container" style="height: 100px; margin-left: 110px;">
+      <br>
+    <img src="assets/electric.png" class="logo" alt="" style="width: 5%; cursor:pointer; background-color: transparent  "> 
+    <p style="margin-left: 70px; margin-top: -45px; "><b>Electricity Power Limited</b></p>
+    </div> 
+ 
+
+
+    <!--  <nav>
+      <ul>
+          <li><a routerLink="/home" routerLinkActive="active" >Home</a></li>
+          <li><a href="#">About</a></li>
+          <li><a routerLink="/billpayment" routerLinkActive="active">Pay Bill</a></li>
+        
+
+          
+        <li class="dropdown-container">
+          <a href="#">{{this.username}}</a>
+           <ul class="dropdown">
+            
+            <li><a class="dropdown" (click)="logout()"><i class="fa fa-sign-out icon-col"></i>&nbsp; Logout</a></li>
+          </ul>
+          </li>
+        
+      
+
+      
+    </ul>
+    </nav>
+    
+      <br> -->
+    
+     
+        
+        </div>
+        <nav class="navbar navbar-expand-lg navbar-dark  headerTheme nav1">
+         
+          <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+              aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+              <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarSupportedContent">
+              <ul class="navbar-nav mr-auto">
+                  <li class="nav-item">
+                      <a class="nav-link active" role="button" data-toggle="dropdown" routerLink="/home">
+                          <i class="fa fa-pie-chart colo1" aria-hidden="true"></i> Home
+                      </a>
+                  </li>
+                  <li class="nav-item">
+                      <a class="nav-link active" role="button" data-toggle="dropdown"  routerLink="/about" >
+      
+                          <i class="fa fa-list-alt colo1" aria-hidden="true" ></i> About
+                      </a>
+                  </li>
+                  <li class="nav-item">
+                      <a class="nav-link active" role="button" data-toggle="dropdown" routerLink="/billpayment"
+                          
+                          >
+      
+                          <!-- <i class="fa fa-warning" aria-hidden="true" ></i> Port Alerts -->
+                          <i class="fa fa-file-text colo1" aria-hidden="true"></i> Pay Bills
+      
+                      </a>
+                  </li>
+                 
+      
+      
+              </ul>
+              <ul class="navbar-nav mr-right">
+                <li class="nav-item active">
+    
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle active" id="navbarDropdown" role="button" data-toggle="dropdown"
+                        [ngClass]="{'nav-item-active': ((currentComponent  == 'usermanagement')  || (currentComponent  == 'profile') )}"
+                        aria-haspopup="true" aria-expanded="false">
+                        {{ username }}
+    
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <!-- <a class="dropdown-item" [ngClass]="{'nav-item-active': currentComponent  == 'profile'}"
+                         ><i class="fa fa-user icon-col"></i>&nbsp; Profile</a> -->
+                        <!-- <div *ngIf="userType != 'user' " class="dropdown-divider"></div> -->
+                        <!-- <a *ngIf="userType != 'user' " class="dropdown-item"
+                            [ngClass]="{'nav-item-active': currentComponent  == 'usermanagement'}"
+                             href="dashboard/userManagement"><i
+                                class="fa fa-users icon-col"></i>&nbsp; Users</a> -->
+    
+                        <!-- <div *ngIf="userType != 'user' " class="dropdown-divider"></div> -->
+    
+                        <!-- <a class="dropdown-item" ><i class="fa fa-unlock-alt icon-col"></i>&nbsp;
+                            Change
+                            Password</a> -->
+                        <!-- <div class="dropdown-divider"></div> -->
+                        <a class="dropdown-item" (click)="logout()"><i class="fa fa-sign-out icon-col"></i>&nbsp; Logout</a>
+    
+                    </div>
+                </li>
+            </ul>
+          </div>
+      
+      </nav>
