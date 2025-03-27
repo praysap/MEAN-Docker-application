@@ -78,54 +78,36 @@ app.get('/', (req, res) => {
 
 
 
-// user_logs stored in mysql database 
 // app.post('/store-info', (req, res) => {
 //   // Get client IP from the request
 //   const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-// //console.log(clientIp);
+  
 //   // Get current URL from the request body
 //   const { currentUrl } = req.body;
 
-//   // Store the client IP and current URL in the database
-//   const sql = 'INSERT INTO user_logs (ip_address, attack_data) VALUES (?, ?)';
-//   dbConn.query(sql, [clientIp, currentUrl], (err, result) => {
-//       if (err) {
-//           console.error('Error storing data:', err.stack);
-//           res.status(500).json({ error: 'Internal Server Error' });
-//           return;
-//       }
-//       res.status(200).json({ message: 'Data stored successfully' });
+//   // Extract IPv4 address from potential IPv6 format
+//   const ipv4Address = clientIp.includes(':') ? clientIp.split(':').pop() : clientIp;
+
+//   // Get current UTC timestamp
+  
+//   const currentDate = new Date();
+//   // Convert UTC timestamp to IST
+//   const currentIST = moment().tz('Asia/Kolkata').format('YYYY-MM-DD HH:mm:ss');
+
+//   // Store the client IP and current URL in the database with IST timestamp
+//   const sql = 'INSERT INTO user_logs (ip_address, attack_data, created_at) VALUES (?, ?, ?)';
+//   db.run(sql, [ipv4Address, currentUrl, currentIST], function(err) {
+//     if (err) {
+//       console.error('Error storing data:', err.message);
+//       res.status(500).json({ error: 'Internal Server Error' });
+//       return;
+//     }
+//     console.log(`Data stored successfully with ID: ${this.lastID}`);
+//     res.status(200).json({ message: 'Data stored successfully' });
 //   });
 // });
 
-app.post('/store-info', (req, res) => {
-  // Get client IP from the request
-  const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  
-  // Get current URL from the request body
-  const { currentUrl } = req.body;
 
-  // Extract IPv4 address from potential IPv6 format
-  const ipv4Address = clientIp.includes(':') ? clientIp.split(':').pop() : clientIp;
-
-  // Get current UTC timestamp
-  
-  const currentDate = new Date();
-  // Convert UTC timestamp to IST
-  const currentIST = moment().tz('Asia/Kolkata').format('YYYY-MM-DD HH:mm:ss');
-
-  // Store the client IP and current URL in the database with IST timestamp
-  const sql = 'INSERT INTO user_logs (ip_address, attack_data, created_at) VALUES (?, ?, ?)';
-  db.run(sql, [ipv4Address, currentUrl, currentIST], function(err) {
-    if (err) {
-      console.error('Error storing data:', err.message);
-      res.status(500).json({ error: 'Internal Server Error' });
-      return;
-    }
-    console.log(`Data stored successfully with ID: ${this.lastID}`);
-    res.status(200).json({ message: 'Data stored successfully' });
-  });
-});
 const options = {
   key: fs.readFileSync("server.key"),
   cert: fs.readFileSync("server.cert"),
