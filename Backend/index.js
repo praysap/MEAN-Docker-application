@@ -21,7 +21,7 @@ app.use(helmet.frameguard({ action: "SAMEORIGIN" }));
 // Set up Global configuration access
 dotenv.config();
 var dbConn = require('../Backend/config/db.config.js');
-const sequelize = require("./src/database/db.config.js");
+//const sequelize = require("./src/database/db.config.js");
 const sqlite3 = require('sqlite3').verbose();
 // setup the server port
 const port = process.env.PORT || 5000;
