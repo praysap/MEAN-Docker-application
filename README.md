@@ -152,9 +152,9 @@ cd /etc/letsencrypt/live/zyanmonster.live/
 ---
 
  
-# Three tier with MySQL Docker Setup
+# Three-tier application with MySQL Docker Setup
 
-This is a simple Flask app that interacts with a MySQL database. The app allows users to submit messages, which are then stored in the database and displayed on the frontend.
+This is a simple MEAN that interacts with a MySQL database.
 
 ## Prerequisites
 
