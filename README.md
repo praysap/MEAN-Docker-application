@@ -214,7 +214,7 @@ docker-compose down
 docker-compose stop
 ```
 
-## To run this two-tier application using  without docker-compose
+## To run this Three-tier application using  without docker-compose
 
 - First create a docker image from Dockerfile
 ```bash
@@ -237,24 +237,49 @@ docker network create threetier
 
 - Attach both the containers in the same network, so that they can communicate with each other
 
-i) MySQL container 
+- MySQL container 
+
 ```bash
-docker run -d  --name mysql --network=threetier -e MYSQL_DATABASE=hws -e MYSQL_ROOT_PASSWORD=root -p 3306:3306 mysql:8.0
+docker run -d  
+ --name mysql 
+ --network=threetier 
+ -e MYSQL_DATABASE=hws 
+ -e MYSQL_ROOT_PASSWORD=root 
+ -p 3306:3306 mysql:8.0
 
 ```
-ii) Backend container
+- Backend container
+
 ```bash
-docker run -d  --name user-backend --network=threetier -e MYSQL_HOST=mysql -e MYSQL_USER=root -e MYSQL_PASSWORD=root -e MYSQL_DB=hws -p 3000:3000 praysap/user-backend:latest
+docker run -d  
+ --name user-backend 
+ --network=threetier 
+ -e MYSQL_HOST=mysql 
+ -e MYSQL_USER=root 
+ -e MYSQL_PASSWORD=root 
+ -e MYSQL_DB=hws 
+ -p 3000:3000 
+ praysap/user-backend:latest
 
 ```
 
-ii) frontend container
+- frontend container
+
 ```bash
-docker run -d  --name user-frontend --network=threetier -e API_URL="http://3.91.227.132:3000" -p 80:80 praysap/user-frontend:latest
+docker run -d  
+ --name user-frontend 
+ --network=threetier 
+ -e API_URL="http://3.91.227.132:3000" 
+ -p 80:80 
+ praysap/user-frontend:latest
 
 ```
 
+- To to access the running Docker container with container ID and open an interactive bash shell inside it.
 
+```bash
+docker exec -it {container-ID} bash
 
+```
 📌 **Happy Deploying! 🚀**
 
