@@ -3,9 +3,9 @@ require("dotenv").config(); // Load environment variables
 const { Sequelize } = require("sequelize");
 
 const sequelize = new Sequelize(
-  process.env.DB_DATABASE,  // Database name
-  process.env.DB_USER,      // Database username
-  process.env.DB_PASSWORD,  // Database password
+  process.env.MYSQL_DB,  // Database name
+  process.env.MYSQL_USER,      // Database username
+  process.env.MYSQL_PASSWORD,  // Database password
   {
     host: process.env.DB_HOST, // Database host
     dialect: "mysql",
