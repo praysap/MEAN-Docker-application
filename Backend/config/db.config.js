@@ -3,15 +3,12 @@ require("dotenv").config(); // Load environment variables
 const { Sequelize } = require("sequelize");
 
 const sequelize = new Sequelize(
-  process.env.MYSQL_DB,  // Database name
-  process.env.MYSQL_USER,      // Database username
-  process.env.MYSQL_PASSWORD,  // Database password
-  {
-    host: process.env.DB_HOST, // Database host
-    dialect: "mysql",
-    logging: console.log, // Logs SQL queries (optional for debugging)
-  }
-);
+   process.env.MYSQL_DB,
+   process.env.MYSQL_USER,
+   process.env.MYSQL_PASSWORD, {
+  host: process.env.MYSQL_HOST,
+  dialect: "mysql",
+});
 
 (async () => {
   try {
