@@ -151,13 +151,110 @@ cd /etc/letsencrypt/live/zyanmonster.live/
 
 ---
 
-## **🎯 Conclusion**
-By following these steps, you have successfully **deployed an Angular application on an AWS EC2 instance** with **Apache2, PM2, and SSL encryption**. Your application is now accessible securely over HTTPS.
+ 
+# Three tier with MySQL Docker Setup
 
-🔹 **Next Steps:**
-- Set up **Auto-Scaling** for high availability.
-- Monitor logs using **AWS CloudWatch**.
-- Optimize server performance with **caching mechanisms**.
+This is a simple Flask app that interacts with a MySQL database. The app allows users to submit messages, which are then stored in the database and displayed on the frontend.
+
+## Prerequisites
+
+Before you begin, make sure you have the following installed:
+
+- Docker
+- Git (optional, for cloning the repository)
+
+## Setup
+
+1. Clone this repository (if you haven't already):
+
+   ```bash
+   git clone https://github.com/your-username/your-repo-name.git
+   ```
+
+2. Navigate to the project directory:
+
+   ```bash
+   cd your-repo-name
+   ```
+
+3. Create a `.env` file in the project directory to store your MySQL environment variables:
+
+   ```bash
+   touch .env
+   ```
+
+4. Open the `.env` file and add your MySQL configuration:
+
+   ```
+   MYSQL_HOST=mysql
+   MYSQL_USER=your_username
+   MYSQL_PASSWORD=your_password
+   MYSQL_DB=your_database
+   ```
+
+## Usage
+
+1. Start the containers using Docker Compose:
+
+   ```bash
+   docker-compose up --build
+   ```
+
+
+
+## Cleaning Up
+
+To stop and remove the Docker containers, press `Ctrl+C` in the terminal where the containers are running, or use the following command:
+
+```bash
+docker-compose down
+```
+
+```bash
+docker-compose stop
+```
+
+## To run this two-tier application using  without docker-compose
+
+- First create a docker image from Dockerfile
+```bash
+docker build -t praysap/user-backend:latest .
+```
+
+```bash
+docker build -t praysap/user-frontend:latest .
+```
+
+- To pull the official MySQL 8.0 image from Docker Hub.
+```bash
+docker pull mysql:8.0
+```
+
+- Now, make sure that you have created a network using following command
+```bash
+docker network create threetier
+```
+
+- Attach both the containers in the same network, so that they can communicate with each other
+
+i) MySQL container 
+```bash
+docker run -d  --name mysql --network=threetier -e MYSQL_DATABASE=hws -e MYSQL_ROOT_PASSWORD=root -p 3306:3306 mysql:8.0
+
+```
+ii) Backend container
+```bash
+docker run -d  --name user-backend --network=threetier -e MYSQL_HOST=mysql -e MYSQL_USER=root -e MYSQL_PASSWORD=root -e MYSQL_DB=hws -p 3000:3000 praysap/user-backend:latest
+
+```
+
+ii) frontend container
+```bash
+docker run -d  --name user-frontend --network=threetier -e API_URL="http://3.91.227.132:3000" -p 80:80 praysap/user-frontend:latest
+
+```
+
+
 
 📌 **Happy Deploying! 🚀**
 
