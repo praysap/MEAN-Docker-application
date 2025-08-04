@@ -1,0 +1,43 @@
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    environment:
+      MYSQL_DATABASE: hws
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    networks:
+      - threetier
+
+  user-backend:
+    image: vipulsaw123/backend-mean:latest
+    container_name: user-backend
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      MYSQL_DB: hws
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mysql
+    networks:
+      - threetier
+
+  user-frontend:
+    image: vipulsaw123/frontend-mean:latest
+    container_name: user-frontend
+    environment:
+      API_URL: "http://127.0.0.1:3000"
+    ports:
+      - "80:80"
+    depends_on:
+      - user-backend
+    networks:
+      - threetier
+
+networks:
+  threetier:
+    name: threetier
