@@ -40,10 +40,10 @@ sudo systemctl start mysql
 
 ### **Create Database**
 ```sql
-CREATE DATABASE hws;
 ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'Admin@123!';
 FLUSH PRIVILEGES;
 ```
+
 ```sh
 sudo systemctl restart mysql
 ```
