@@ -3,7 +3,7 @@ var elasticsearch = require("elasticsearch");
 
 var client = new elasticsearch.Client({
   // host: 'http://192.168.8.163:9200'
-  host: 'http://192.168.8.163:9200/',
+  host: 'https://192.168.8.163:9200/',
   requestTimeout: 120000,
 });
 

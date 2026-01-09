@@ -24,6 +24,9 @@ import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
 import { AboutComponent } from './about/about.component';
 import { NotfoundComponent } from './notfound/notfound.component';
 import {MatTableModule} from '@angular/material/table';
+import { DashboardFilterWrapperComponent } from './dashboard-filter-wrapper/dashboard-filter-wrapper.component';
+import { KibanaDataTableComponent } from './kibana-data-table/kibana-data-table.component';
+import { KibanaFilterBarComponent } from './kibana-filter-bar/kibana-filter-bar.component';
 @NgModule({
   declarations: [
     AppComponent,
@@ -35,7 +38,10 @@ import {MatTableModule} from '@angular/material/table';
     HeaderComponent,
     HomeComponent,
     AboutComponent,
-    NotfoundComponent
+    NotfoundComponent,
+    DashboardFilterWrapperComponent,
+    KibanaDataTableComponent,
+    KibanaFilterBarComponent
   ],
   imports: [
     BrowserModule.withServerTransition({ appId: 'ng-cli-universal' }),

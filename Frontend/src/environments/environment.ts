@@ -1,5 +1,5 @@
 
-const API_URL = "http://localhost:4500";
+const API_URL = "http://10.228.11.88:3000";
 
 export const environment = {
     production: false,
@@ -33,4 +33,12 @@ export const environment = {
    url: API_URL + '/url',
    findeone: API_URL + '/findeone',
    
+// Kibana-like Web Logs Search
+webLogsSearch: API_URL + '/api/elastic/web-logs-search',
+
+
+getfields:API_URL + '/api/elastic/fields',
+
+getfiledvalues:API_URL + '/api/elastic/field-values',
+
   };

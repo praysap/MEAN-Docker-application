@@ -1,0 +1,260 @@
+<div class="kibana-filter-overlay" *ngIf="isVisible" (click)="cancel()">
+  <div class="kibana-filter-container" (click)="$event.stopPropagation()">
+    <!-- Header with title and Query DSL link -->
+    <div class="filter-header">
+      <h3 class="filter-title">Add filter</h3>
+      <a class="query-dsl-link" (click)="toggleQueryDSL()">
+        {{ showQueryDSL ? 'Hide Query DSL' : 'Edit as Query DSL' }}
+      </a>
+    </div>
+
+    <!-- Main filter section -->
+    <div class="filter-main">
+      <!-- Query DSL Editor -->
+      <div class="query-dsl-section" *ngIf="showQueryDSL">
+        <textarea 
+          class="query-dsl-textarea" 
+          [(ngModel)]="queryDSL" 
+          placeholder="Enter Query DSL JSON..."
+          rows="10">
+        </textarea>
+      </div>
+
+      <!-- Filter Rows -->
+      <div *ngIf="!showQueryDSL">
+        <div [formGroup]="filterForm">
+          <div class="filter-rows" formArrayName="filters">
+          <div 
+            *ngFor="let filterControl of filters.controls; let i = index" 
+            [formGroupName]="i"
+            class="filter-row-wrapper">
+          
+          <!-- Logic separator line (OR/AND) -->
+          <div *ngIf="i > 0" class="logic-separator">
+            <div class="separator-line"></div>
+            <span class="separator-label">{{ filterControl.get('logic')?.value || 'AND' }}</span>
+            <div class="separator-line"></div>
+          </div>
+          
+          <div class="filter-row">
+            <!-- Drag handle -->
+            <div class="drag-handle">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M3 5h10M3 8h10M3 11h10" stroke="#69707d" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+
+            <!-- Field selector -->
+            <select 
+              class="field-select"
+              formControlName="field"
+              (change)="onFieldChange(i); updatePreview()">
+              <option value="">Select a field</option>
+              <option *ngFor="let field of availableFields" [value]="field">
+                {{ field }}
+              </option>
+            </select>
+
+            <!-- Operator selector -->
+            <select 
+              class="operator-select"
+              formControlName="operator"
+              (change)="onOperatorChange(i); updatePreview()">
+              <option value="">Select operator</option>
+              <option *ngFor="let op of operators" [value]="op.value">
+                {{ op.label }}
+              </option>
+            </select>
+
+            <!-- Loading indicator for field values -->
+            <div *ngIf="loadingFieldValues[i]" class="loading-values">
+              <span>Loading...</span>
+            </div>
+
+            <!-- Range inputs - Show when operator is 'range' -->
+            <div *ngIf="!loadingFieldValues[i] && 
+                        filterControl.get('operator')?.value === 'range'"
+                 class="range-inputs">
+              <!-- Min operator dropdown -->
+              <select
+                class="range-operator-select"
+                formControlName="minOperator"
+                (change)="updatePreview()">
+                <option *ngFor="let op of getMinRangeOperators()" 
+                        [value]="op.value"
+                        [selected]="op.value === 'gt'">
+                  {{ op.label }}
+                </option>
+              </select>
+              
+              <!-- Min value input -->
+              <input
+                class="range-value-input"
+                type="text"
+                formControlName="minValue"
+                placeholder="Value"
+                (input)="updatePreview()"/>
+              
+              <!-- Max operator dropdown -->
+              <select
+                class="range-operator-select"
+                formControlName="maxOperator"
+                (change)="updatePreview()">
+                <option *ngFor="let op of getMaxRangeOperators()" 
+                        [value]="op.value"
+                        [selected]="op.value === 'lt'">
+                  {{ op.label }}
+                </option>
+              </select>
+              
+              <!-- Max value input -->
+              <input
+                class="range-value-input"
+                type="text"
+                formControlName="maxValue"
+                placeholder="Value"
+                (input)="updatePreview()"/>
+            </div>
+
+            <!-- Prefix input - Show when operator is 'prefix' -->
+            <input
+              *ngIf="!loadingFieldValues[i] && 
+                     filterControl.get('operator')?.value === 'prefix'"
+              class="value-input prefix-input"
+              type="text"
+              formControlName="value"
+              placeholder="Search"
+              (input)="updatePreview()"/>
+
+            <!-- Wildcard input - Show when operator is 'wildcard' -->
+            <input
+              *ngIf="!loadingFieldValues[i] && 
+                     filterControl.get('operator')?.value === 'wildcard'"
+              class="value-input wildcard-input"
+              type="text"
+              formControlName="value"
+              placeholder="Search"
+              (input)="updatePreview()"/>
+
+            <!-- Query String input - Show when operator is 'query_string' -->
+            <input
+              *ngIf="!loadingFieldValues[i] && 
+                     filterControl.get('operator')?.value === 'query_string'"
+              class="value-input query-string-input"
+              type="text"
+              formControlName="value"
+              placeholder="Search"
+              (input)="updatePreview()"/>
+
+            <!-- Value input - Dropdown for keyword fields when values are available -->
+            <select
+              *ngIf="!loadingFieldValues[i] &&
+                     filterControl.get('field')?.value && 
+                     filterControl.get('operator')?.value && 
+                     filterControl.get('operator')?.value !== 'exists' && 
+                     filterControl.get('operator')?.value !== 'does_not_exist' &&
+                     filterControl.get('operator')?.value !== 'range' &&
+                     filterControl.get('operator')?.value !== 'prefix' &&
+                     filterControl.get('operator')?.value !== 'wildcard' &&
+                     filterControl.get('operator')?.value !== 'query_string' &&
+                     isKeywordField(filterControl.get('field')?.value) &&
+                     getFieldValues(i, filterControl.get('field')?.value).length > 0"
+              class="value-input value-select"
+              formControlName="value"
+              (change)="updatePreview()">
+              <option value="">Select value...</option>
+              <option *ngFor="let val of getFieldValues(i, filterControl.get('field')?.value)" [value]="val">
+                {{ val }}
+              </option>
+            </select>
+
+            <!-- Value input - Text input for all other cases -->
+            <input
+              *ngIf="!loadingFieldValues[i] && 
+                     (!filterControl.get('field')?.value || 
+                      !filterControl.get('operator')?.value ||
+                      filterControl.get('operator')?.value === 'exists' || 
+                      filterControl.get('operator')?.value === 'does_not_exist' ||
+                      filterControl.get('operator')?.value === 'range' ||
+                      filterControl.get('operator')?.value === 'prefix' ||
+                      filterControl.get('operator')?.value === 'wildcard' ||
+                      filterControl.get('operator')?.value === 'query_string' ||
+                      !isKeywordField(filterControl.get('field')?.value) ||
+                      (isKeywordField(filterControl.get('field')?.value) && 
+                       getFieldValues(i, filterControl.get('field')?.value).length === 0)) &&
+                     filterControl.get('operator')?.value !== 'range' &&
+                     filterControl.get('operator')?.value !== 'prefix' &&
+                     filterControl.get('operator')?.value !== 'wildcard' &&
+                     filterControl.get('operator')?.value !== 'query_string'"
+              class="value-input"
+              type="text"
+              formControlName="value"
+              [placeholder]="getValuePlaceholder(i)"
+              [disabled]="!filterControl.get('field')?.value || !filterControl.get('operator')?.value || 
+                         filterControl.get('operator')?.value === 'exists' || 
+                         filterControl.get('operator')?.value === 'does_not_exist'"
+              (input)="updatePreview()"/>
+
+            <!-- Action buttons -->
+            <div class="filter-actions">
+              <button 
+                class="action-btn delete-btn" 
+                (click)="removeFilter(i); updatePreview()"
+                type="button"
+                title="Delete filter">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M12 4l-8 8M4 4l8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </button>
+              <button 
+                class="action-btn add-btn add-or-btn" 
+                (click)="addFilterWithLogic(i, 'OR'); updatePreview()"
+                type="button"
+                title="Add OR filter">
+                <span class="add-icon-circle">+</span>
+                <span>OR</span>
+              </button>
+              <button 
+                class="action-btn add-btn add-and-btn" 
+                (click)="addFilterWithLogic(i, 'AND'); updatePreview()"
+                type="button"
+                title="Add AND filter">
+                <span class="add-icon-circle">+</span>
+                <span>AND</span>
+              </button>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview section -->
+      <div class="preview-section" *ngIf="!showQueryDSL && previewText">
+        <label class="preview-title">Preview</label>
+        <div class="preview-content" [innerHTML]="previewHtml"></div>
+      </div>
+
+      <!-- Custom label section -->
+      <!-- <div class="custom-label-section" *ngIf="!showQueryDSL">
+        <label class="custom-label-title">Custom label (optional)</label>
+        <input 
+          class="custom-label-input"
+          type="text"
+          [(ngModel)]="customLabel"
+          placeholder="Add a custom label here"/>
+      </div> -->
+    </div>
+
+    <!-- Footer buttons -->
+    <div class="filter-footer" *ngIf="!showQueryDSL">
+      <button class="btn-cancel" (click)="cancel()" type="button">Cancel</button>
+      <button 
+        class="btn-add-filter" 
+        (click)="applyFilters()" 
+        type="button"
+        [disabled]="!canAddFilter()">
+        Add filter
+      </button>
+    </div>
+  </div>
+</div>

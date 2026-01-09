@@ -14,14 +14,14 @@ export class HomeComponent implements OnInit {
   constructor(public http: HttpClient) {}
 
   ngOnInit(): void {
-    const currentUrl = window.location.href;
-    this.storeCurrentUrl(currentUrl).subscribe(
-        //response => console.log(response),
-       // error => console.error(error)
-    );
+    // const currentUrl = window.location.href;
+    // this.storeCurrentUrl(currentUrl).subscribe(
+    //     //response => console.log(response),
+    //    // error => console.error(error)
+    // );
   }
 
-  storeCurrentUrl(currentUrl: string): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/store-info`, { currentUrl });
-  }
+  // storeCurrentUrl(currentUrl: string): Observable<any> {
+  //   return this.http.post<any>(`${this.apiUrl}/store-info`, { currentUrl });
+  // }
 }

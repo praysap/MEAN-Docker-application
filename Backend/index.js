@@ -3,22 +3,20 @@ const express = require('express');
 const dotenv = require('dotenv');
 const app = express();
 const https = require("https");
-// const jwt = require('jsonwebtoken');
+const elasticRoutes = require("./src/routes/elastic.route.js");
 const bodyParser = require('body-parser');
 const cors = require('cors');
-// const session = require('express-session');
-// const Sequelize = require('sequelize');
+const routes = require("./src/routes/users.route.js");
 const config = process.env;
 const IP = require('ip');
 const moment = require('moment-timezone');
 const fs = require('fs');
 const { constants } = require('crypto')
-// create express app
+
 const helmet = require('helmet');
-// const frameguard = require("frameguard");
-// app.use(helmet());
+
 app.use(helmet.frameguard({ action: "SAMEORIGIN" }));
-// Set up Global configuration access
+
 dotenv.config();
 var dbConn = require('../Backend/config/db.config.js');
 const sequelize = require("./src/database/db.config.js");
@@ -55,21 +53,17 @@ app.get('/', (req, res) => {
 });
 app.set('env', 'production');
 app.use(cors({
-  origin: ["http://10.228.12.65"]
+  origin: ["http://10.228.12.65", "http://localhost:4200","http://10.228.11.88:4200" ]
 }));     
 
-const userElasticRouter = require('./src/routes/elastic.route.js');
 const userRouter = require('./src/routes/users.route.js');
 //const dashRouter = require('./src/routes/dash.route.js');
 const { send } = require('process');
 
-// create users routes
-app.use('/api/v1/users', userRouter);
+app.use("/", routes);
+app.use("/api/elastic", elasticRoutes);
 
-app.use('/', userElasticRouter);
-
-//app.use('/dash',dashRouter)
-
+app.use("/api/v1/users", userRouter);
 
 
 app.get('/', (req, res) => {
@@ -78,34 +72,7 @@ app.get('/', (req, res) => {
 
 
 
-// app.post('/store-info', (req, res) => {
-//   // Get client IP from the request
-//   const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  
-//   // Get current URL from the request body
-//   const { currentUrl } = req.body;
 
-//   // Extract IPv4 address from potential IPv6 format
-//   const ipv4Address = clientIp.includes(':') ? clientIp.split(':').pop() : clientIp;
-
-//   // Get current UTC timestamp
-  
-//   const currentDate = new Date();
-//   // Convert UTC timestamp to IST
-//   const currentIST = moment().tz('Asia/Kolkata').format('YYYY-MM-DD HH:mm:ss');
-
-//   // Store the client IP and current URL in the database with IST timestamp
-//   const sql = 'INSERT INTO user_logs (ip_address, attack_data, created_at) VALUES (?, ?, ?)';
-//   db.run(sql, [ipv4Address, currentUrl, currentIST], function(err) {
-//     if (err) {
-//       console.error('Error storing data:', err.message);
-//       res.status(500).json({ error: 'Internal Server Error' });
-//       return;
-//     }
-//     console.log(`Data stored successfully with ID: ${this.lastID}`);
-//     res.status(200).json({ message: 'Data stored successfully' });
-//   });
-// });
 
 
 const options = {
@@ -127,18 +94,21 @@ app.listen(port, () => {
   console.log(`app running on ${port}`)
 });
 
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('Error opening database:', err.message);
-  } else {
-    console.log('Connected to the sqlite3 database.');
-  }
-});
+// const db = new sqlite3.Database(dbPath, (err) => {
+//   if (err) {
+//     console.error('Error opening database:', err.message);
+//   } else {
+//     console.log('Connected to the sqlite3 database.');
+//   }
+// });
 
 (async () => {
   try {
-    await sequelize.sync({ alter: true }); // Ensures tables match the model
-    console.log("Database & tables created!");
+    await sequelize.authenticate();
+    console.log("DB connected");
+
+    await sequelize.sync(); // ✅ NO alter
+    console.log("Database synced");
   } catch (error) {
     console.error("Error syncing database:", error);
   }

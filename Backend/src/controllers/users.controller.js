@@ -243,54 +243,6 @@ exports.getUserListByID = (req, res) => {
     })
 
 }
-// get geolocation ip 
-
-
-
-// create new user
-// exports.createUser = async (req, res) => {
-
-//     const errors = validationResult(req)
-//     if (!errors.isEmpty()) {
-//         var extractedErrors = errors.array({ onlyFirstError: true });
-//         return res.status(400).json({
-//             status: 400,
-//             data: null,
-//             message: extractedErrors[0].msg,
-//             error: true,
-//         });
-//     }
-
-
-//     var loggedUser = [];
-//     var getSess = [];
-//     if (req.headers.authorization) {
-//         loggedUser = await getLoggedUser(req);
-//         getSess = await getLoggedUserSession(loggedUser.dataValues.user_id);
-//     }
-//     const emailExists = await User.findOne({ where: { email: req.body.email } });
-//     if (emailExists) {
-//         return res.status(400).send({details: 'Email already registered!'})
-//     }
-
-
-//     const userNameExists = await User.findOne({ where: { username: req.body.username } });
-//     if (userNameExists) {
-//         return res.send(400, {
-//             details: 'Username already registered!'
-//         })
-//     }
-
-
-//     UserModel.createUser(req, async (err, user) => {
-
-//         if (err) {
-//           return  res.send(err)
-//         } else {
-//             return res.send(user)
-//         }
-//     })
-// };
 
 exports.createUser = async (req, res) => {
     const errors = validationResult(req);

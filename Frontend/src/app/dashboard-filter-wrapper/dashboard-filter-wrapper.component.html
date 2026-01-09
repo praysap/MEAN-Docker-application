@@ -1,0 +1,61 @@
+<div class="dashboard-filter-wrapper">
+    <!-- Filter Bar Toggle Button -->
+    <div class="filter-bar-container">
+        <button class="add-filter-btn" (click)="toggleFilterBar()" type="button">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Add filter
+        </button>
+    </div>
+
+    <!-- Active Filters Display (Kibana-style) -->
+    <div class="active-filters-bar" *ngIf="activeFilters && activeFilters.filters.length > 0">
+        <div class="active-filters-list">
+            <div *ngFor="let filter of activeFilters.filters; let i = index" class="filter-item-wrapper">
+                <!-- Logic operator badge (AND/OR) before filter (except first) -->
+                <div class="filter-logic-badge" *ngIf="i > 0">
+                    <span class="logic-badge" [class.and]="filter.logic === 'AND'" [class.or]="filter.logic === 'OR'">
+                        {{ filter.logic || 'AND' }}
+                    </span>
+                </div>
+                
+                <!-- Filter badge -->
+                <div class="filter-badge-item">
+                    <span class="filter-label">
+                        <span class="filter-field">{{ filter.field }}</span>
+                        <span class="filter-operator">{{ getOperatorLabel(filter.operator) }}</span>
+                        <span class="filter-value" *ngIf="filter.value">{{ formatFilterValue(filter.value) }}</span>
+                    </span>
+                    <button 
+                        class="filter-remove-btn" 
+                        (click)="removeFilter(i)"
+                        type="button"
+                        title="Remove filter">
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                            <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <button class="clear-all-filters-btn" (click)="clearFilters()" type="button">
+            Clear all
+        </button>
+    </div>
+
+    <!-- Kibana Filter Bar Component -->
+    <app-kibana-filter-bar 
+        [isVisible]="showFilterBar"
+        (filtersApplied)="onFiltersApplied($event)"
+        (closeFilterBar)="onCloseFilterBar()">
+    </app-kibana-filter-bar>
+
+    <!-- Kibana Data Table -->
+    <app-kibana-data-table 
+        [filters]="activeFilters"
+        (dataLoaded)="onDataTableLoaded($event)">
+    </app-kibana-data-table>
+</div>
+
+

@@ -9,6 +9,7 @@ import { HeaderComponent } from './header/header.component';
 import { HomeComponent } from './home/home.component';
 import { AboutComponent } from './about/about.component';
 import { NotfoundComponent } from './notfound/notfound.component';
+import { DashboardFilterWrapperComponent } from './dashboard-filter-wrapper/dashboard-filter-wrapper.component';
 const routes: Routes = [
   { path: '', component: LoginComponent  },
 
@@ -24,7 +25,9 @@ const routes: Routes = [
 
   {path:'about',component:AboutComponent  },
 
-  {path:'**',component:NotfoundComponent  }
+  // {path:'**',component:NotfoundComponent  },
+
+   {path:'dashboard',component:DashboardFilterWrapperComponent },
   
 ];
 

@@ -1,0 +1,157 @@
+<div class="kibana-table-container">
+  <!-- Header Section -->
+  <div class="kibana-header">
+    <div class="header-top">
+      <div class="time-range">
+        <span class="time-range-text">Field statistics</span>
+        <span class="summary-indicator">↓ Summary</span>
+      </div>
+      <div class="header-actions">
+        <button class="action-btn" title="Sort fields">
+          <span>↑ Sort fields {{ selectedFields.length }}</span>
+        </button>
+        <button class="action-btn icon-btn" title="Search">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <circle cx="7" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M10 10l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <button class="action-btn icon-btn" title="Grid view">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <rect x="2" y="2" width="5" height="5" stroke="currentColor" stroke-width="1.5"/>
+            <rect x="9" y="2" width="5" height="5" stroke="currentColor" stroke-width="1.5"/>
+            <rect x="2" y="9" width="5" height="5" stroke="currentColor" stroke-width="1.5"/>
+            <rect x="9" y="9" width="5" height="5" stroke="currentColor" stroke-width="1.5"/>
+          </svg>
+        </button>
+        <button class="action-btn icon-btn" title="Filter">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M2 4h12M4 8h8M6 12h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <span>Loading data...</span>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="error-container">
+    <span class="error-text">{{ error }}</span>
+  </div>
+
+  <!-- Data Table -->
+  <div *ngIf="!loading && !error" class="table-wrapper">
+    <table class="kibana-table">
+      <thead>
+        <tr>
+          <th class="checkbox-col">
+            <input type="checkbox" />
+          </th>
+          <th class="expand-col"></th>
+          <th 
+            class="sortable" 
+            (click)="onSort('@timestamp')"
+            [class.sorted]="sortField === '@timestamp'">
+            @timestamp
+            <span *ngIf="sortField === '@timestamp'" class="sort-indicator">
+              {{ sortOrder === 'asc' ? '↑' : '↓' }}
+            </span>
+          </th>
+          <th *ngFor="let field of selectedFields" 
+              class="sortable"
+              (click)="onSort(field)"
+              [class.sorted]="sortField === field">
+            {{ field }}
+            <span *ngIf="sortField === field" class="sort-indicator">
+              {{ sortOrder === 'asc' ? '↑' : '↓' }}
+            </span>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let entry of logs" [class.expanded]="entry.expanded">
+          <td class="checkbox-col">
+            <input type="checkbox" />
+          </td>
+          <td class="expand-col">
+            <button class="expand-btn" (click)="expandRow(entry)" title="Expand row">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </td>
+          <td class="timestamp-cell">
+            {{ formatTimestamp(getFieldValue(entry, '@timestamp')) }}
+          </td>
+          <td *ngFor="let field of selectedFields" class="data-cell" [class.highlighted]="isFieldHighlighted(entry, field)">
+            <span class="field-value">{{ getFieldValue(entry, field) }}</span>
+          </td>
+        </tr>
+        
+        <!-- Expanded Row Details -->
+        <tr *ngFor="let entry of logs" class="detail-row" [class.visible]="entry.expanded">
+          <td colspan="100%" class="detail-cell">
+            <div class="detail-content">
+              <div class="detail-header">
+                <strong>Document Details</strong>
+                <span class="doc-id">_id: {{ entry._id }}</span>
+                <span class="doc-index">_index: {{ entry._index }}</span>
+              </div>
+              <div class="detail-fields">
+                <div *ngFor="let key of getObjectKeys(entry._source)" class="detail-field">
+                  <span class="field-name">{{ key }}:</span>
+                  <span class="field-value">{{ entry._source[key] || '-' }}</span>
+                </div>
+              </div>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Empty State -->
+    <div *ngIf="logs.length === 0 && !loading" class="empty-state">
+      <p>No documents found</p>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="pagination-container" *ngIf="!loading && !error && logs.length > 0">
+    <div class="pagination-left">
+      <span>Rows per page:</span>
+      <select [(ngModel)]="pageSize" (change)="onPageSizeChange(pageSize)">
+        <option [value]="10">10</option>
+        <option [value]="25">25</option>
+        <option [value]="50">50</option>
+        <option [value]="100">100</option>
+        <option [value]="250">250</option>
+        <option [value]="500">500</option>
+      </select>
+      <span class="total-info">{{ totalHits }} documents</span>
+    </div>
+    <div class="pagination-right">
+      <button 
+        class="page-btn" 
+        [disabled]="currentPage === 0"
+        (click)="onPageChange(currentPage - 1)">
+        &lt;
+      </button>
+      <span class="page-info">
+        {{ currentPage + 1 }} of {{ getTotalPages() }}
+      </span>
+      <button 
+        class="page-btn" 
+        [disabled]="currentPage >= getTotalPages() - 1"
+        (click)="onPageChange(currentPage + 1)">
+        &gt;
+      </button>
+    </div>
+  </div>
+</div>
+
+
