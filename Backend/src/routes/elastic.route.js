@@ -19,6 +19,13 @@ const client = new elasticsearch.Client({
 });
 
 
+// var client = new elasticsearch.Client({
+//   host: ['http://192.168.7.26:9200',
+//     'http://192.168.7.3:9200'],
+//   requestTimeout: 120000,
+// });
+
+
 
 client.ping( function (error) {
   if (error) {
@@ -33,6 +40,7 @@ client.ping( function (error) {
 
 router.get('/fields', async (req, res) => {
   try {
+    
     const index = 's-security-*';
     const mapping = await client.indices.getMapping({ index });
 
