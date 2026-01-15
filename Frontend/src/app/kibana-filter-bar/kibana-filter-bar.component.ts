@@ -438,19 +438,53 @@ getMaxRangeOperators() {
       // Normalize operator to handle various formats
       const normalizedOperator = this.normalizeOperator(filter.operator);
       
+      // Helper function to check if value is numeric
+      const isNumericValue = (val: any): boolean => {
+        if (val === null || val === undefined || val === '') return false;
+        if (typeof val === 'number') return true;
+        if (typeof val === 'string') {
+          return /^-?\d+(\.\d+)?$/.test(val.trim());
+        }
+        return false;
+      };
+
+      // Helper function to check if field is a date/timestamp field
+      const isDateField = (field: string): boolean => {
+        return field === '@timestamp' || 
+               field.toLowerCase().includes('date') || 
+               field.toLowerCase().includes('time');
+      };
+
+      // Helper function to convert value to appropriate type
+      const convertValue = (val: any, field: string): any => {
+        // Never convert keyword fields - they should always be strings
+        if (isKeyword) {
+          return val;
+        }
+        // For non-keyword fields, convert numeric values to numbers
+        if (isNumericValue(val)) {
+          const numVal = typeof val === 'string' ? parseFloat(val.trim()) : val;
+          return isNaN(numVal) ? val : numVal;
+        }
+        return val;
+      };
+      
       switch (normalizedOperator) {
         case 'is':
-          // Field exactly matches a single value - use term for keyword, match for text
-          if (isKeyword) {
-            query = { term: { [filter.field]: filter.value } };
+          // Use term for keyword fields, date fields, or numeric values
+          // Use match only for text fields with non-numeric values
+          if (isKeyword || isDateField(filter.field) || isNumericValue(filter.value)) {
+            const value = convertValue(filter.value, filter.field);
+            query = { term: { [filter.field]: value } };
           } else {
             query = { match: { [filter.field]: filter.value } };
           }
           break;
         case 'is_not':
           // Field does not exactly match a single value
-          if (isKeyword) {
-            query = { bool: { must_not: [{ term: { [filter.field]: filter.value } }] } };
+          if (isKeyword || isDateField(filter.field) || isNumericValue(filter.value)) {
+            const notValue = convertValue(filter.value, filter.field);
+            query = { bool: { must_not: [{ term: { [filter.field]: notValue } }] } };
           } else {
             query = { bool: { must_not: [{ match: { [filter.field]: filter.value } }] } };
           }
@@ -481,10 +515,10 @@ getMaxRangeOperators() {
           // Range query with min and max operators
           const rangeQuery: any = {};
           if (filter.minValue) {
-            rangeQuery[filter.minOperator || 'gt'] = filter.minValue;
+            rangeQuery[filter.minOperator || 'gt'] = convertValue(filter.minValue, filter.field);
           }
           if (filter.maxValue) {
-            rangeQuery[filter.maxOperator || 'lt'] = filter.maxValue;
+            rangeQuery[filter.maxOperator || 'lt'] = convertValue(filter.maxValue, filter.field);
           }
           if (Object.keys(rangeQuery).length > 0) {
             query = { range: { [filter.field]: rangeQuery } };
@@ -586,17 +620,37 @@ getMaxRangeOperators() {
       }
     }
 
-    // All groups are combined with AND (bool.must)
-    const boolQuery: any = {};
-    if (groups.length > 0) {
-      boolQuery.must = groups;
-    }
-
-    const queryDSL = {
-      query: {
-        bool: boolQuery
+    // Build the final query structure
+    let queryDSL: any;
+    
+    // If there's only one group and it's a should clause (all OR filters), 
+    // put should directly in bool, not wrapped in must
+    if (groups.length === 1 && groups[0].bool && groups[0].bool.should) {
+      queryDSL = {
+        query: {
+          bool: {
+            should: groups[0].bool.should,
+            minimum_should_match: groups[0].bool.minimum_should_match || 1
+          }
+        }
+      };
+    } else if (groups.length === 1) {
+      // Single query (no grouping needed)
+      queryDSL = {
+        query: groups[0]
+      };
+    } else {
+      // Multiple groups - wrap in must
+      const boolQuery: any = {};
+      if (groups.length > 0) {
+        boolQuery.must = groups;
       }
-    };
+      queryDSL = {
+        query: {
+          bool: boolQuery
+        }
+      };
+    }
 
     this.queryDSL = JSON.stringify(queryDSL, null, 2);
   }
