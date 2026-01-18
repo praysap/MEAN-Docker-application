@@ -10,10 +10,10 @@ const elasticsearch = require('elasticsearch');
 
 const client = new elasticsearch.Client({
   host: {
-    host: '10.228.1.115',
+    host: '3.148.186.35',
     port: 9200,
-    protocol: 'http',
-    auth: 'elastic:cdacsiem@123'
+    protocol: 'https',
+    auth: 'elastic:EeU+n9IeC*VRn7qR8Zqq'
   },
   requestTimeout: 120000
 });
@@ -41,7 +41,7 @@ client.ping( function (error) {
 router.get('/fields', async (req, res) => {
   try {
     
-    const index = 's-security-*';
+    const index = 'web-l';
     const mapping = await client.indices.getMapping({ index });
 
     const fields = new Set();
@@ -95,7 +95,7 @@ router.get('/field-values',  async (req, res) => {
       });
     }
 
-    const index = 's-security-*';
+    const index = 'web-l';
     
     // Parse existing filters if provided (for context-aware filtering like Kibana)
     let existingFilters = null;
@@ -175,7 +175,7 @@ router.post('/web-logs-search',  async (req, res) => {
       sortOrder = 'desc'
     } = req.body;
 
-    const index = 's-security-*';
+    const index = 'web-l';
     
     // Build query from Query DSL or use default
     let queryBody = {

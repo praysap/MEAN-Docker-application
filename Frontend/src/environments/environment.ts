@@ -1,5 +1,5 @@
 
-const API_URL = "http://10.228.11.88:3000";
+const API_URL = "http://localhost:3000";
 
 export const environment = {
     production: false,

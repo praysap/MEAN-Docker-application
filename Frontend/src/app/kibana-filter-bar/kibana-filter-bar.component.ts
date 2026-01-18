@@ -134,9 +134,6 @@ getMaxRangeOperators() {
           'timestamp.keyword',
           'verb',
           'verb.keyword',
-          '_id',
-          '_index',
-          '_ignored'
         ];
       }
     );
