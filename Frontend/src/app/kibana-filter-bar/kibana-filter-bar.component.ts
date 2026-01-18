@@ -251,6 +251,81 @@ getMaxRangeOperators() {
     this.updatePreview();
   }
 
+  /**
+   * Builds Kibana 8.18.1 style preview with sequential nesting behavior.
+   * This implements right-associative nesting where alternating operators create nested groups.
+   * 
+   * Examples:
+   * - A OR B OR C → "A OR B OR C"
+   * - A AND B AND C → "A AND B AND C"
+   * - A OR B AND C OR D → "A OR (B AND (C OR D))"
+   * - A AND B OR C AND D → "A AND (B OR (C AND D))"
+   */
+  buildKibanaPreview(filters: Array<{ text: string; logic: string; hasNot: boolean }>): string {
+    if (filters.length === 0) {
+      return '';
+    }
+
+    if (filters.length === 1) {
+      return filters[0].hasNot ? `NOT ${filters[0].text}` : filters[0].text;
+    }
+
+    // Extract logic operators (first filter has no logic operator)
+    const operators: Array<'AND' | 'OR' | null> = [null];
+    for (let i = 1; i < filters.length; i++) {
+      operators.push((filters[i].logic || 'AND') as 'AND' | 'OR');
+    }
+
+    // Check if all operators are the same
+    const allOperators = operators.slice(1);
+    const allSame = allOperators.every(op => op === allOperators[0]);
+
+    if (allSame) {
+      // All same operator - no parentheses needed
+      const parts: string[] = [];
+      filters.forEach((filter, idx) => {
+        if (idx > 0) {
+          parts.push(operators[idx]!);
+        }
+        parts.push(filter.hasNot ? `NOT ${filter.text}` : filter.text);
+      });
+      return parts.join(' ');
+    }
+
+    // Different operators - build right-associatively from right to left
+    // Process filters from right to left, nesting when operators change
+    
+    let result = filters[filters.length - 1].hasNot 
+      ? `NOT ${filters[filters.length - 1].text}` 
+      : filters[filters.length - 1].text;
+
+    // Build from right to left, nesting when operator changes
+    // operators[i] is the operator BEFORE filter[i] (between filter[i-1] and filter[i])
+    for (let i = filters.length - 2; i >= 0; i--) {
+      // The operator between filter[i] and filter[i+1] is operators[i+1]
+      const currentOp = operators[i + 1]!;
+      const currentFilter = filters[i];
+      const currentFilterText = currentFilter.hasNot 
+        ? `NOT ${currentFilter.text}` 
+        : currentFilter.text;
+
+      // Check if result needs parentheses
+      // Result needs parentheses if it starts with a different operator than current
+      // We can check this by looking at the operator used to build the current result
+      let needsParens = false;
+      if (i + 1 < filters.length - 1) {
+        // The operator that was used to build 'result' is operators[i+2]
+        // (the operator between filter[i+1] and filter[i+2], which is what we just processed)
+        const resultOp = operators[i + 2]!;
+        needsParens = resultOp !== currentOp;
+      }
+
+      result = `${currentFilterText} ${currentOp} ${needsParens ? `(${result})` : result}`;
+    }
+
+    return result;
+  }
+
   updatePreview(): void {
     const filterArray = this.filters.value;
     if (filterArray.length === 0) {
@@ -332,79 +407,84 @@ getMaxRangeOperators() {
       return;
     }
 
-    // Build preview HTML with proper grouping: OR groups with parentheses, AND separates groups
-    const htmlParts: string[] = [];
-    const textParts: string[] = [];
-    
-    // Group filters: OR conditions form groups, AND conditions separate groups
-    const groups: FilterExpr[][] = [];
-    let currentGroup: FilterExpr[] = [filterExpressions[0]];
-    
-    for (let i = 1; i < filterExpressions.length; i++) {
-      const expr = filterExpressions[i];
-      if (expr.logic === 'OR') {
-        // Add to current OR group
-        currentGroup.push(expr);
-      } else {
-        // AND - close current group and start new one
-        groups.push(currentGroup);
-        currentGroup = [expr];
-      }
+    // Use Kibana-style preview builder
+    const previewText = this.buildKibanaPreview(filterExpressions);
+    this.previewText = previewText;
+
+    // Build HTML version with styled operators
+    const htmlPreview = this.buildKibanaPreviewHtml(filterExpressions);
+    this.previewHtml = this.sanitizer.bypassSecurityTrustHtml(htmlPreview);
+  }
+
+  /**
+   * Builds HTML version of Kibana preview with styled operators and filters
+   */
+  buildKibanaPreviewHtml(filters: Array<{ text: string; logic: string; hasNot: boolean }>): string {
+    if (filters.length === 0) {
+      return '';
     }
-    // Add the last group
-    if (currentGroup.length > 0) {
-      groups.push(currentGroup);
-    }
-    
-    // Build preview: each group is either a single filter or (filter1 OR filter2 OR ...)
-    groups.forEach((group, groupIdx) => {
-      if (groupIdx > 0) {
-        // Add AND separator between groups
-        htmlParts.push(' ');
-        htmlParts.push(`<span style="color: rgb(0, 119, 204); font-weight: 600;">AND</span>`);
-        htmlParts.push(' ');
-        textParts.push(' AND');
+
+    if (filters.length === 1) {
+      const filter = filters[0];
+      if (filter.hasNot) {
+        return `<span style="color: #bd271e; font-weight: 600;">NOT</span> <span style="color: #008000;">${this.escapeHtml(filter.text)}</span>`;
       }
-      
-      if (group.length === 1) {
-        // Single filter in group - no parentheses needed
-        const expr = group[0];
-        if (expr.hasNot) {
-          htmlParts.push(`<span style="color: #bd271e; font-weight: 600;">NOT</span> `);
-          htmlParts.push(`<span style="color: #008000;">${this.escapeHtml(expr.text)}</span>`);
-          textParts.push(`NOT ${expr.text}`);
-        } else {
-          htmlParts.push(`<span style="color: #008000;">${this.escapeHtml(expr.text)}</span>`);
-          textParts.push(expr.text);
+      return `<span style="color: #008000;">${this.escapeHtml(filter.text)}</span>`;
+    }
+
+    // Extract logic operators
+    const operators: Array<'AND' | 'OR' | null> = [null];
+    for (let i = 1; i < filters.length; i++) {
+      operators.push((filters[i].logic || 'AND') as 'AND' | 'OR');
+    }
+
+    // Check if all operators are the same
+    const allOperators = operators.slice(1);
+    const allSame = allOperators.every(op => op === allOperators[0]);
+
+    if (allSame) {
+      // All same operator - no parentheses needed
+      const parts: string[] = [];
+      filters.forEach((filter, idx) => {
+        if (idx > 0) {
+          const opColor = 'rgb(0, 119, 204)';
+          parts.push(` <span style="color: ${opColor}; font-weight: 600;">${operators[idx]}</span> `);
         }
-      } else {
-        // Multiple filters in group - wrap in parentheses with OR
-        htmlParts.push('(');
-        textParts.push('(');
-        group.forEach((expr, exprIdx) => {
-          if (exprIdx > 0) {
-            htmlParts.push(' ');
-            htmlParts.push(`<span style="color: rgb(0, 119, 204); font-weight: 600;">OR</span>`);
-            htmlParts.push(' ');
-            textParts.push(' OR');
-          }
-          if (expr.hasNot) {
-            htmlParts.push(`<span style="color: #bd271e; font-weight: 600;">NOT</span> `);
-            htmlParts.push(`<span style="color: #008000;">${this.escapeHtml(expr.text)}</span>`);
-            textParts.push(`NOT ${expr.text}`);
-          } else {
-            htmlParts.push(`<span style="color: #008000;">${this.escapeHtml(expr.text)}</span>`);
-            textParts.push(expr.text);
-          }
-        });
-        htmlParts.push(')');
-        textParts.push(')');
-      }
-    });
+        if (filter.hasNot) {
+          parts.push(`<span style="color: #bd271e; font-weight: 600;">NOT</span> <span style="color: #008000;">${this.escapeHtml(filter.text)}</span>`);
+        } else {
+          parts.push(`<span style="color: #008000;">${this.escapeHtml(filter.text)}</span>`);
+        }
+      });
+      return parts.join('');
+    }
+
+    // Different operators - build right-associatively from right to left (same as text version)
+    const opColor = 'rgb(0, 119, 204)';
     
-    this.previewText = textParts.join(' ');
-    // Use bypassSecurityTrustHtml to allow the HTML with styles
-    this.previewHtml = this.sanitizer.bypassSecurityTrustHtml(htmlParts.join(' '));
+    let resultHtml = filters[filters.length - 1].hasNot
+      ? `<span style="color: #bd271e; font-weight: 600;">NOT</span> <span style="color: #008000;">${this.escapeHtml(filters[filters.length - 1].text)}</span>`
+      : `<span style="color: #008000;">${this.escapeHtml(filters[filters.length - 1].text)}</span>`;
+
+    // Build from right to left, nesting when operator changes
+    for (let i = filters.length - 2; i >= 0; i--) {
+      const currentOp = operators[i + 1]!;
+      const currentFilter = filters[i];
+      const currentFilterHtml = currentFilter.hasNot
+        ? `<span style="color: #bd271e; font-weight: 600;">NOT</span> <span style="color: #008000;">${this.escapeHtml(currentFilter.text)}</span>`
+        : `<span style="color: #008000;">${this.escapeHtml(currentFilter.text)}</span>`;
+
+      // Check if result needs parentheses (same logic as text version)
+      let needsParens = false;
+      if (i + 1 < filters.length - 1) {
+        const resultOp = operators[i + 2]!;
+        needsParens = resultOp !== currentOp;
+      }
+
+      resultHtml = `${currentFilterHtml} <span style="color: ${opColor}; font-weight: 600;">${currentOp}</span> ${needsParens ? `(${resultHtml})` : resultHtml}`;
+    }
+
+    return resultHtml;
   }
 
   escapeHtml(text: string): string {
@@ -570,83 +650,115 @@ getMaxRangeOperators() {
       queries.push({ query, logic: filter.logic || 'AND', index });
     });
 
-    // Group queries: OR conditions form groups, AND conditions separate groups
-    const groups: any[] = [];
-    let currentGroup: any[] = [];
-    
-    queries.forEach((item: { query: any, logic: string, index: number }, idx: number) => {
-      if (idx === 0) {
-        // First query always starts a group
-        currentGroup.push(item.query);
-      } else {
-        if (item.logic === 'OR') {
-          // Add to current OR group
-          currentGroup.push(item.query);
-        } else {
-          // AND - close current group and start new one
-          if (currentGroup.length > 0) {
-            if (currentGroup.length === 1) {
-              // Single query in group - add directly to must
-              groups.push(currentGroup[0]);
-            } else {
-              // Multiple queries in group - wrap in bool.should
-              groups.push({
-                bool: {
-                  should: currentGroup,
-                  minimum_should_match: 1
-                }
-              });
-            }
-            currentGroup = [item.query];
-          }
-        }
-      }
-    });
-    
-    // Add the last group
-    if (currentGroup.length > 0) {
-      if (currentGroup.length === 1) {
-        groups.push(currentGroup[0]);
-      } else {
-        groups.push({
-          bool: {
-            should: currentGroup,
-            minimum_should_match: 1
-          }
-        });
-      }
+    // Build Query DSL with Kibana-style sequential nesting (right-associative)
+    // Extract operators (operators[i] is the operator before filter[i])
+    const operators: Array<'AND' | 'OR' | null> = [null];
+    for (let i = 1; i < queries.length; i++) {
+      operators.push((queries[i].logic || 'AND') as 'AND' | 'OR');
     }
 
-    // Build the final query structure
+    // Check if all operators are the same
+    const allOperators = operators.slice(1);
+    const allSame = allOperators.length > 0 && allOperators.every(op => op === allOperators[0]);
+
     let queryDSL: any;
-    
-    // If there's only one group and it's a should clause (all OR filters), 
-    // put should directly in bool, not wrapped in must
-    if (groups.length === 1 && groups[0].bool && groups[0].bool.should) {
-      queryDSL = {
-        query: {
-          bool: {
-            should: groups[0].bool.should,
-            minimum_should_match: groups[0].bool.minimum_should_match || 1
+
+    if (queries.length === 1) {
+      // Single query
+      queryDSL = { query: queries[0].query };
+    } else if (allSame) {
+      // All same operator - simple grouping
+      const queryList = queries.map(q => q.query);
+      if (allOperators[0] === 'OR') {
+        queryDSL = {
+          query: {
+            bool: {
+              should: queryList,
+              minimum_should_match: 1
+            }
+          }
+        };
+      } else {
+        // AND
+        queryDSL = {
+          query: {
+            bool: {
+              must: queryList
+            }
+          }
+        };
+      }
+    } else {
+      // Different operators - build right-associatively from right to left
+      // This matches the Kibana sequential nesting behavior
+      
+      let result = queries[queries.length - 1].query;
+
+      // Build from right to left, nesting when operator changes
+      for (let i = queries.length - 2; i >= 0; i--) {
+        const currentOp = operators[i + 1]!;
+        const currentQuery = queries[i].query;
+
+        // Check if result needs parentheses (nesting)
+        let needsNesting = false;
+        if (i + 1 < queries.length - 1) {
+          const resultOp = operators[i + 2]!;
+          needsNesting = resultOp !== currentOp;
+        }
+
+        // Combine currentQuery with result
+        if (currentOp === 'OR') {
+          // OR operation: use bool.should
+          if (needsNesting) {
+            // Result needs to be wrapped (it has different operator inside)
+            result = {
+              bool: {
+                should: [currentQuery, result],
+                minimum_should_match: 1
+              }
+            };
+          } else {
+            // Check if result is already a should clause
+            if (result.bool && result.bool.should) {
+              // Extend existing should clause
+              result.bool.should = [currentQuery, ...result.bool.should];
+            } else {
+              // Create new should clause
+              result = {
+                bool: {
+                  should: [currentQuery, result],
+                  minimum_should_match: 1
+                }
+              };
+            }
+          }
+        } else {
+          // AND operation: use bool.must
+          if (needsNesting) {
+            // Result needs to be wrapped (it has different operator inside)
+            result = {
+              bool: {
+                must: [currentQuery, result]
+              }
+            };
+          } else {
+            // Check if result is already a must clause
+            if (result.bool && result.bool.must) {
+              // Extend existing must clause
+              result.bool.must = [currentQuery, ...result.bool.must];
+            } else {
+              // Create new must clause
+              result = {
+                bool: {
+                  must: [currentQuery, result]
+                }
+              };
+            }
           }
         }
-      };
-    } else if (groups.length === 1) {
-      // Single query (no grouping needed)
-      queryDSL = {
-        query: groups[0]
-      };
-    } else {
-      // Multiple groups - wrap in must
-      const boolQuery: any = {};
-      if (groups.length > 0) {
-        boolQuery.must = groups;
       }
-      queryDSL = {
-        query: {
-          bool: boolQuery
-        }
-      };
+
+      queryDSL = { query: result };
     }
 
     this.queryDSL = JSON.stringify(queryDSL, null, 2);
