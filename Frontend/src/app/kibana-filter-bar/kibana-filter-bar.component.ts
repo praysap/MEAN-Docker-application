@@ -166,12 +166,23 @@ getMaxRangeOperators() {
     return this.fieldValuesMap[`${index}_${field}`] || [];
   }
 
+  /**
+   * Adds a new filter. If it's the first filter (index 0), it has no logic operator.
+   * Subsequent filters default to 'AND' logic unless specified.
+   * 
+   * @param logic The logic operator ('AND' or 'OR') to use for the new filter. 
+   *              For the first filter, this is ignored and set to empty string.
+   */
   addFilter(logic: 'AND' | 'OR' = 'AND'): void {
+    // First filter should have no logic operator (it's the base filter)
+    const isFirstFilter = this.filters.length === 0;
+    const filterLogic = isFirstFilter ? '' : logic;
+    
     const filterGroup = this.fb.group({
       field: ['', Validators.required],
       operator: ['', Validators.required],
       value: [''],
-      logic: [logic],
+      logic: [filterLogic], // Empty for first filter, specified logic for others
       // Range-specific fields
       minOperator: ['gt'],
       minValue: [''],
@@ -185,11 +196,44 @@ getMaxRangeOperators() {
 
   removeFilter(index: number): void {
     this.filters.removeAt(index);
+    // After removing a filter, update logic of remaining filters
+    // The first filter should have no logic, subsequent filters keep their logic
+    if (this.filters.length > 0 && index === 0) {
+      // If we removed the first filter, the new first filter should have no logic
+      const firstFilter = this.filters.at(0);
+      if (firstFilter) {
+        firstFilter.get('logic')?.setValue('');
+      }
+    }
     this.updatePreview();
   }
 
+  /**
+   * Adds a new filter with the specified logic immediately after the filter at the given index.
+   * This matches Kibana 8.18.1 behavior where clicking "Add OR filter" or "Add AND filter" 
+   * inserts a new filter right after the current one.
+   * 
+   * @param index The index of the filter row where the button was clicked
+   * @param logic The logic operator ('AND' or 'OR') to use for the new filter
+   */
   addFilterWithLogic(index: number, logic: 'AND' | 'OR'): void {
-    this.addFilter(logic);
+    // Create new filter group with the specified logic
+    const filterGroup = this.fb.group({
+      field: ['', Validators.required],
+      operator: ['', Validators.required],
+      value: [''],
+      logic: [logic], // Set the logic for this new filter
+      // Range-specific fields
+      minOperator: ['gt'],
+      minValue: [''],
+      maxOperator: ['lt'],
+      maxValue: ['']
+    });
+
+    // Insert the new filter immediately after the current filter (at index + 1)
+    // This matches Kibana's behavior where the new filter appears right below the clicked row
+    this.filters.insert(index + 1, filterGroup);
+    this.updatePreview();
   }
 
   onFieldChange(index: number): void {
