@@ -13,7 +13,7 @@ const client = new elasticsearch.Client({
     host: '3.148.186.35',
     port: 9200,
     protocol: 'https',
-    auth: 'elastic:EeU+n9IeC*VRn7qR8Zqq'
+    auth: 'elastic:ZkT*9QjD9CrQa=kPpkdF'
   },
   requestTimeout: 120000
 });
