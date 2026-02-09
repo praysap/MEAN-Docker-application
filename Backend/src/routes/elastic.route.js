@@ -10,7 +10,7 @@ const elasticsearch = require('elasticsearch');
 
 const client = new elasticsearch.Client({
   host: {
-    host: '3.148.186.35',
+    host: '3.144.16.51',
     port: 9200,
     protocol: 'https',
     auth: 'elastic:ZkT*9QjD9CrQa=kPpkdF'
@@ -19,11 +19,6 @@ const client = new elasticsearch.Client({
 });
 
 
-// var client = new elasticsearch.Client({
-//   host: ['http://192.168.7.26:9200',
-//     'http://192.168.7.3:9200'],
-//   requestTimeout: 120000,
-// });
 
 
 

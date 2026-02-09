@@ -442,6 +442,26 @@
   color: #008000 !important;
 }
 
+/* Preview group styling - styled parentheses for nested groups */
+.preview-content ::ng-deep .preview-group,
+.preview-content .preview-group {
+  display: inline-block;
+  padding: 2px 4px;
+  margin: 0 2px;
+  background: rgba(0, 119, 204, 0.08);
+  border-radius: 3px;
+  border: 1px solid rgba(0, 119, 204, 0.2);
+  color: #343741;
+  font-weight: 500;
+}
+
+/* Nested groups get slightly different background for visual hierarchy */
+.preview-content ::ng-deep .preview-group .preview-group,
+.preview-content .preview-group .preview-group {
+  background: rgba(0, 119, 204, 0.12);
+  border-color: rgba(0, 119, 204, 0.3);
+}
+
 /* Custom label section */
 .custom-label-section {
   margin-top: 24px;
