@@ -27,6 +27,8 @@ import {MatTableModule} from '@angular/material/table';
 import { DashboardFilterWrapperComponent } from './dashboard-filter-wrapper/dashboard-filter-wrapper.component';
 import { KibanaDataTableComponent } from './kibana-data-table/kibana-data-table.component';
 import { KibanaFilterBarComponent } from './kibana-filter-bar/kibana-filter-bar.component';
+import { FilterGroupManagerComponent } from './filter-group-manager/filter-group-manager.component';
+import { FilterBuilderComponent } from './filter-builder/filter-builder.component';
 @NgModule({
   declarations: [
     AppComponent,
@@ -41,7 +43,9 @@ import { KibanaFilterBarComponent } from './kibana-filter-bar/kibana-filter-bar.
     NotfoundComponent,
     DashboardFilterWrapperComponent,
     KibanaDataTableComponent,
-    KibanaFilterBarComponent
+    KibanaFilterBarComponent,
+    FilterGroupManagerComponent,
+    FilterBuilderComponent
   ],
   imports: [
     BrowserModule.withServerTransition({ appId: 'ng-cli-universal' }),

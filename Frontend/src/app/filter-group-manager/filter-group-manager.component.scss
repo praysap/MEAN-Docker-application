@@ -1,0 +1,736 @@
+// ============================================================================
+// Filter Group Manager Styles
+// Kibana-style multi-clause grouping visualization
+// ============================================================================
+
+.filter-group-manager {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  padding: 16px;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  position: relative;
+
+  // ============================================================================
+  // Filter Builder Modal
+  // ============================================================================
+  .filter-builder-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+
+    .filter-builder-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(2px);
+    }
+
+    .filter-builder-container {
+      position: relative;
+      z-index: 1001;
+      width: 100%;
+      max-width: 900px;
+      max-height: 90vh;
+      overflow: hidden;
+    }
+  }
+
+  // ============================================================================
+  // Manager Header
+  // ============================================================================
+  .manager-header {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #d3dae6;
+
+    .open-builder-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: #0061a8;
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: #005291;
+      }
+
+      svg {
+        flex-shrink: 0;
+      }
+    }
+  }
+
+  // ============================================================================
+  // Group Visualization Bar
+  // ============================================================================
+  .group-visualization {
+    display: grid;
+    gap: 4px;
+    margin-bottom: 16px;
+    padding: 8px;
+    background: #f5f7fa;
+    border-radius: 6px;
+    border: 1px solid #d3dae6;
+
+    .group-indicator {
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s ease;
+
+      &.or-group {
+        background: #e6f0ff;
+        border: 1px solid #0061a8;
+        color: #0061a8;
+
+        .ungroup-btn {
+          color: #0061a8;
+          &:hover {
+            background: rgba(0, 97, 168, 0.1);
+          }
+        }
+      }
+
+      &.and-group {
+        background: #e6f7e6;
+        border: 1px solid #017d73;
+        color: #017d73;
+
+        .ungroup-btn {
+          color: #017d73;
+          &:hover {
+            background: rgba(1, 125, 115, 0.1);
+          }
+        }
+      }
+
+      .group-label {
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .ungroup-btn {
+        background: transparent;
+        border: none;
+        padding: 4px;
+        cursor: pointer;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s ease;
+
+        &:hover {
+          background: rgba(0, 0, 0, 0.05);
+        }
+      }
+    }
+  }
+
+  // ============================================================================
+  // Group Controls
+  // ============================================================================
+  .group-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    background: #f5f7fa;
+    border: 1px dashed #0061a8;
+    border-radius: 6px;
+
+    .selection-info {
+      font-size: 13px;
+      font-weight: 500;
+      color: #343741;
+    }
+
+    .group-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .group-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      .btn-icon {
+        display: flex;
+        align-items: center;
+      }
+
+      &.or-btn {
+        background: #e6f0ff;
+        border-color: #0061a8;
+        color: #0061a8;
+
+        &:hover {
+          background: #0061a8;
+          color: #ffffff;
+        }
+      }
+
+      &.and-btn {
+        background: #e6f7e6;
+        border-color: #017d73;
+        color: #017d73;
+
+        &:hover {
+          background: #017d73;
+          color: #ffffff;
+        }
+      }
+    }
+
+    .cancel-btn {
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      background: transparent;
+      border: 1px solid #d3dae6;
+      border-radius: 4px;
+      color: #69707d;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: #f5f7fa;
+        border-color: #69707d;
+        color: #343741;
+      }
+    }
+  }
+
+  // ============================================================================
+  // Filter Pills Container
+  // ============================================================================
+  .filter-pills-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0;
+  }
+
+  // ============================================================================
+  // Filter Separators (AND/OR connectors)
+  // ============================================================================
+  .filter-separator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    min-width: 60px;
+
+    .separator-line {
+      flex: 1;
+      height: 1px;
+      background: #d3dae6;
+      transition: all 0.2s ease;
+
+      &.group-boundary {
+        height: 2px;
+        background: #0061a8;
+      }
+    }
+
+    .separator-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+
+      &.or {
+        background: #e6f0ff;
+        color: #0061a8;
+      }
+
+      &.and {
+        background: #e6f7e6;
+        color: #017d73;
+      }
+
+      &.group-boundary {
+        border: 1px solid currentColor;
+      }
+    }
+  }
+
+  // ============================================================================
+  // Filter Pill Wrapper
+  // ============================================================================
+  .filter-pill-wrapper {
+    display: flex;
+    align-items: center;
+    position: relative;
+
+    // Group brackets
+    .group-bracket {
+      position: absolute;
+      width: 12px;
+      border: 2px solid #0061a8;
+      pointer-events: none;
+
+      &.group-bracket-start {
+        left: -6px;
+        top: 4px;
+        bottom: 4px;
+        border-right: none;
+        border-radius: 4px 0 0 4px;
+
+        .bracket-label {
+          position: absolute;
+          top: -8px;
+          left: 4px;
+          font-size: 9px;
+          font-weight: 700;
+          color: #0061a8;
+          background: #ffffff;
+          padding: 0 4px;
+          text-transform: uppercase;
+        }
+      }
+
+      &.group-bracket-end {
+        right: -6px;
+        top: 4px;
+        bottom: 4px;
+        border-left: none;
+        border-radius: 0 4px 4px 0;
+      }
+    }
+  }
+
+  // ============================================================================
+  // Filter Pill
+  // ============================================================================
+  .filter-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #f5f7fa;
+    border: 1px solid #d3dae6;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+
+    &:hover {
+      background: #e8eaf0;
+      border-color: #0061a8;
+    }
+
+    &.selected {
+      background: #e6f0ff;
+      border-color: #0061a8;
+      box-shadow: 0 0 0 2px rgba(0, 97, 168, 0.2);
+    }
+
+    &.grouped {
+      border-left: 3px solid #0061a8;
+    }
+
+    &.group-start {
+      border-top-left-radius: 2px;
+      border-bottom-left-radius: 2px;
+    }
+
+    &.group-end {
+      border-top-right-radius: 2px;
+      border-bottom-right-radius: 2px;
+    }
+
+    // Filter Content
+    .filter-content {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+
+      .filter-field {
+        font-weight: 600;
+        color: #343741;
+      }
+
+      .filter-operator {
+        color: #69707d;
+        font-style: italic;
+      }
+
+      .filter-value {
+        font-weight: 500;
+        color: #0061a8;
+        background: rgba(0, 97, 168, 0.1);
+        padding: 2px 6px;
+        border-radius: 3px;
+      }
+    }
+
+    // Filter Actions
+    .filter-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+
+      .filter-pill:hover & {
+        opacity: 1;
+      }
+
+      .action-btn {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        padding: 4px 8px;
+        font-size: 10px;
+        font-weight: 600;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        .add-icon {
+          font-size: 12px;
+          line-height: 1;
+        }
+
+        &.add-or-btn {
+          background: #e6f0ff;
+          color: #0061a8;
+
+          &:hover {
+            background: #0061a8;
+            color: #ffffff;
+          }
+        }
+
+        &.add-and-btn {
+          background: #e6f7e6;
+          color: #017d73;
+
+          &:hover {
+            background: #017d73;
+            color: #ffffff;
+          }
+        }
+
+        &.remove-btn {
+          background: #f5f7fa;
+          color: #bd271e;
+          padding: 4px;
+
+          &:hover {
+            background: #bd271e;
+            color: #ffffff;
+          }
+        }
+      }
+    }
+  }
+
+  // ============================================================================
+  // Preview Section
+  // ============================================================================
+  .preview-section {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #d3dae6;
+
+    .preview-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #69707d;
+      margin-bottom: 8px;
+    }
+
+    .preview-content {
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 12px;
+      color: #343741;
+      background: #f5f7fa;
+      padding: 12px;
+      border-radius: 4px;
+      border: 1px solid #d3dae6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+  }
+
+  // ============================================================================
+  // Empty State
+  // ============================================================================
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: #69707d;
+    gap: 16px;
+
+    .empty-message {
+      font-size: 14px;
+      font-style: italic;
+    }
+
+    .add-first-filter-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: #0061a8;
+      color: #ffffff;
+      border: none;
+      border-radius: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+
+      &:hover {
+        background: #005a9e;
+      }
+    }
+  }
+
+  // ============================================================================
+  // Filter Rows Layout
+  // ============================================================================
+  .filter-rows-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .filter-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #f5f7fa;
+    border: 1px solid #d3dae6;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: #e8eaf0;
+      border-color: #0061a8;
+    }
+
+    &.selected {
+      background: #e6f0ff;
+      border-color: #0061a8;
+      box-shadow: 0 0 0 2px rgba(0, 97, 168, 0.2);
+    }
+
+    &.grouped {
+      border-left: 3px solid #0061a8;
+    }
+
+    &.group-start {
+      border-top: 2px solid #0061a8;
+    }
+
+    &.group-end {
+      border-bottom: 2px solid #0061a8;
+    }
+  }
+
+  .row-number {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #d3dae6;
+    color: #69707d;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+
+  .logic-operator {
+    flex-shrink: 0;
+  }
+
+  .logic-operator-placeholder {
+    width: 50px;
+    flex-shrink: 0;
+  }
+
+  .operator-badge {
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+
+    &.and {
+      background: #e6f7e6;
+      color: #017d73;
+    }
+
+    &.or {
+      background: #e6f0ff;
+      color: #0061a8;
+    }
+  }
+
+  .row-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .remove-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      background: transparent;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      color: #bd271e;
+      transition: all 0.2s;
+
+      &:hover {
+        background: #f5f7fa;
+      }
+    }
+  }
+
+  // ============================================================================
+  // Add Buttons Row (between filters)
+  // ============================================================================
+  .add-buttons-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0 8px 52px;
+    margin: 4px 0;
+  }
+
+  .add-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px dashed;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: transparent;
+
+    .add-icon {
+      font-size: 14px;
+      line-height: 1;
+    }
+
+    &.add-or-btn {
+      border-color: #0061a8;
+      color: #0061a8;
+
+      &:hover {
+        background: #e6f0ff;
+        border-style: solid;
+      }
+    }
+
+    &.add-and-btn {
+      border-color: #017d73;
+      color: #017d73;
+
+      &:hover {
+        background: #e6f7e6;
+        border-style: solid;
+      }
+    }
+  }
+}
+
+// ============================================================================
+// Responsive Adjustments
+// ============================================================================
+@media (max-width: 768px) {
+  .filter-group-manager {
+    padding: 12px;
+
+    .filter-pills-container {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .filter-separator {
+      padding: 8px 0;
+      justify-content: center;
+
+      .separator-line {
+        display: none;
+      }
+    }
+
+    .filter-pill {
+      width: 100%;
+      justify-content: space-between;
+
+      .filter-actions {
+        opacity: 1;
+      }
+    }
+
+    .group-controls {
+      flex-direction: column;
+      gap: 12px;
+
+      .group-buttons {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  }
+}

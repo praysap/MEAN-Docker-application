@@ -37,6 +37,40 @@
     flex-shrink: 0;
 }
 
+/* Toggle Filter Group Manager Button */
+.toggle-group-manager-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 32px;
+    padding: 0 12px;
+    background: #ffffff;
+    color: #0061a8;
+    border: 1px solid #0061a8;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.toggle-group-manager-btn:hover {
+    background: #e6f0ff;
+}
+
+.toggle-group-manager-btn.active {
+    background: #0061a8;
+    color: #ffffff;
+}
+
+.toggle-group-manager-btn.active:hover {
+    background: #005a9e;
+}
+
+.toggle-group-manager-btn svg {
+    flex-shrink: 0;
+}
+
 .active-filters-info {
     display: flex;
     align-items: center;
@@ -195,6 +229,162 @@
 .clear-all-filters-btn:hover {
     background: #f5f7fa;
     border-color: #69707d;
+    color: #343741;
+}
+
+/* Filter Group Manager Container */
+app-filter-group-manager {
+    display: block;
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+/* Query Preview Toggle */
+.query-preview-toggle {
+    display: flex;
+    align-items: center;
+    margin: 8px 0;
+}
+
+.toggle-preview-btn {
+    padding: 6px 12px;
+    background: #f5f7fa;
+    border: 1px solid #d3dae6;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #0061a8;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.toggle-preview-btn:hover {
+    background: #e6f0ff;
+    border-color: #0061a8;
+}
+
+/* Query Preview Section */
+.query-preview {
+    width: 100%;
+    margin: 12px 0;
+    padding: 12px;
+    background: #1d1e24;
+    border-radius: 6px;
+    overflow-x: auto;
+}
+
+.query-preview pre {
+    margin: 0;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #e6e6e6;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* Active Filters Bar - Updated Layout */
+.active-filters-bar {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px;
+    background: #ffffff;
+    border: 1px solid #d3dae6;
+    border-radius: 8px;
+    margin: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.active-filters-bar .clear-all-filters-btn {
+    align-self: flex-end;
+    margin-top: 12px;
+}
+
+/* Filter Group Manager Overlay */
+.filter-group-manager-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.filter-group-manager-container {
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 900px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.filter-group-manager-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #d3dae6;
+    background: #f5f7fa;
+    border-radius: 8px 8px 0 0;
+}
+
+.filter-group-manager-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #343741;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.create-filter-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 32px;
+    padding: 0 12px;
+    background: #0061a8;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.create-filter-btn:hover {
+    background: #005a9e;
+}
+
+.close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #69707d;
+    transition: all 0.2s;
+}
+
+.close-btn:hover {
+    background: #e8eaf0;
     color: #343741;
 }
 

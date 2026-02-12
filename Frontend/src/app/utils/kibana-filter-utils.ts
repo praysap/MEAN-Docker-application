@@ -76,6 +76,57 @@ export interface SimpleFilter {
 }
 
 // ============================================================================
+// GROUPED FILTER TYPES (Multi-Clause Grouping Support)
+// ============================================================================
+
+/**
+ * Group metadata for filters
+ */
+export interface GroupedFilterMetadata {
+  groupId?: string;
+  groupType?: 'AND' | 'OR';
+  isGroupStart?: boolean;
+  isGroupEnd?: boolean;
+  parentGroupId?: string;
+}
+
+/**
+ * Filter with grouping support
+ */
+export interface GroupedFilter extends SimpleFilter {
+  groupMeta?: GroupedFilterMetadata;
+}
+
+/**
+ * Definition of a filter group
+ */
+export interface FilterGroupDefinition {
+  id: string;
+  type: 'AND' | 'OR';
+  filterIndices: number[];
+  parentGroupId?: string;
+}
+
+/**
+ * Group-aware AST Node
+ */
+export interface GroupAwareASTNode {
+  type: 'filter' | 'bool' | 'group';
+  filter?: KibanaFilter;
+  bool?: {
+    must?: GroupAwareASTNode[];
+    should?: GroupAwareASTNode[];
+    must_not?: GroupAwareASTNode[];
+    minimum_should_match?: number;
+  };
+  group?: {
+    id: string;
+    type: 'AND' | 'OR';
+    children: GroupAwareASTNode[];
+  };
+}
+
+// ============================================================================
 // STEP 1: CONVERT SIMPLE FILTERS TO KIBANA FILTER FORMAT
 // ============================================================================
 
@@ -754,6 +805,437 @@ export function buildEsQueryFromFilters(filters: SimpleFilter[]): any {
 
   return {
     query: esQuery,
+  };
+}
+
+// ============================================================================
+// GROUPED AST BUILDER (Multi-Clause Grouping Support)
+// ============================================================================
+
+/**
+ * Builds a group-aware AST from filters and group definitions
+ * 
+ * This is the main entry point for grouped filter processing.
+ * It respects explicit group boundaries and builds the AST accordingly.
+ * 
+ * Algorithm:
+ * 1. Process filters left-to-right
+ * 2. When encountering a group, build a group node
+ * 3. Ungrouped filters use their logic operator (default AND)
+ * 4. Combine everything respecting operator precedence
+ */
+export function buildGroupedAST(
+  filters: GroupedFilter[],
+  groups: FilterGroupDefinition[]
+): GroupAwareASTNode | null {
+  if (filters.length === 0) {
+    return null;
+  }
+
+  // Filter out disabled filters
+  const enabledFilters = filters.filter(f => !f.disabled);
+  if (enabledFilters.length === 0) {
+    return null;
+  }
+
+  // If only one filter, return it directly
+  if (enabledFilters.length === 1) {
+    return {
+      type: 'filter',
+      filter: toKibanaFilter(enabledFilters[0])
+    };
+  }
+
+  // Build the grouped AST
+  return buildGroupedASTRecursive(enabledFilters, groups, 0, enabledFilters.length - 1);
+}
+
+/**
+ * Recursively builds the grouped AST
+ */
+function buildGroupedASTRecursive(
+  filters: GroupedFilter[],
+  groups: FilterGroupDefinition[],
+  startIdx: number,
+  endIdx: number
+): GroupAwareASTNode | null {
+  if (startIdx > endIdx) {
+    return null;
+  }
+
+  if (startIdx === endIdx) {
+    return {
+      type: 'filter',
+      filter: toKibanaFilter(filters[startIdx])
+    };
+  }
+
+  // Find groups within this range
+  const groupsInRange = groups.filter(g => {
+    const groupStart = Math.min(...g.filterIndices);
+    const groupEnd = Math.max(...g.filterIndices);
+    return groupStart >= startIdx && groupEnd <= endIdx;
+  });
+
+  if (groupsInRange.length === 0) {
+    // No groups - process as flat list with operators
+    return buildFlatAST(filters, startIdx, endIdx);
+  }
+
+  // Process with groups
+  return buildASTWithGroups(filters, groupsInRange, startIdx, endIdx);
+}
+
+/**
+ * Builds AST for flat list (no groups)
+ */
+function buildFlatAST(
+  filters: GroupedFilter[],
+  startIdx: number,
+  endIdx: number
+): GroupAwareASTNode {
+  // Start with first filter
+  let result: GroupAwareASTNode = {
+    type: 'filter',
+    filter: toKibanaFilter(filters[startIdx])
+  };
+
+  // Process remaining filters left-to-right
+  for (let i = startIdx + 1; i <= endIdx; i++) {
+    const operator = filters[i].logic || 'AND';
+    const nextFilter: GroupAwareASTNode = {
+      type: 'filter',
+      filter: toKibanaFilter(filters[i])
+    };
+
+    if (operator === 'OR') {
+      // OR operation
+      if (result.type === 'bool' && result.bool?.should) {
+        // Extend existing should clause
+        result.bool.should!.push(nextFilter);
+      } else {
+        // Create new should clause
+        result = {
+          type: 'bool',
+          bool: {
+            should: [result, nextFilter],
+            minimum_should_match: 1
+          }
+        };
+      }
+    } else {
+      // AND operation
+      if (result.type === 'bool' && result.bool?.must) {
+        // Extend existing must clause
+        result.bool.must!.push(nextFilter);
+      } else if (result.type === 'bool' && result.bool?.should) {
+        // Previous was OR, wrap in must: (A OR B) AND C
+        result = {
+          type: 'bool',
+          bool: {
+            must: [result, nextFilter]
+          }
+        };
+      } else {
+        // Create new must clause
+        result = {
+          type: 'bool',
+          bool: {
+            must: [result, nextFilter]
+          }
+        };
+      }
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Builds AST with explicit groups
+ */
+function buildASTWithGroups(
+  filters: GroupedFilter[],
+  groups: FilterGroupDefinition[],
+  startIdx: number,
+  endIdx: number
+): GroupAwareASTNode {
+  // Sort groups by their start position
+  const sortedGroups = [...groups].sort((a, b) => {
+    const aStart = Math.min(...a.filterIndices);
+    const bStart = Math.min(...b.filterIndices);
+    return aStart - bStart;
+  });
+
+  // Build segments (groups and ungrouped filters)
+  const segments: Array<{
+    type: 'group' | 'filter';
+    group?: FilterGroupDefinition;
+    startIdx: number;
+    endIdx: number;
+    operator?: 'AND' | 'OR';
+  }> = [];
+
+  let currentIdx = startIdx;
+
+  while (currentIdx <= endIdx) {
+    // Check if current position is start of a group
+    const group = sortedGroups.find(g => Math.min(...g.filterIndices) === currentIdx);
+
+    if (group) {
+      // This is a group
+      const groupEnd = Math.max(...group.filterIndices);
+      segments.push({
+        type: 'group',
+        group,
+        startIdx: currentIdx,
+        endIdx: groupEnd
+      });
+      currentIdx = groupEnd + 1;
+    } else {
+      // Find ungrouped filter segment
+      const nextGroupStart = sortedGroups
+        .map(g => Math.min(...g.filterIndices))
+        .filter(idx => idx > currentIdx)
+        .sort((a, b) => a - b)[0];
+
+      const segmentEnd = nextGroupStart ? Math.min(nextGroupStart - 1, endIdx) : endIdx;
+
+      segments.push({
+        type: 'filter',
+        startIdx: currentIdx,
+        endIdx: segmentEnd
+      });
+
+      currentIdx = segmentEnd + 1;
+    }
+  }
+
+  // Build AST from segments
+  if (segments.length === 1) {
+    const seg = segments[0];
+    if (seg.type === 'group' && seg.group) {
+      return buildGroupNode(filters, seg.group);
+    } else {
+      return buildFlatAST(filters, seg.startIdx, seg.endIdx);
+    }
+  }
+
+  // Combine segments
+  let result: GroupAwareASTNode = segments[0].type === 'group' && segments[0].group
+    ? buildGroupNode(filters, segments[0].group)
+    : buildFlatAST(filters, segments[0].startIdx, segments[0].endIdx);
+
+  for (let i = 1; i < segments.length; i++) {
+    const seg = segments[i];
+    const operator = filters[seg.startIdx].logic || 'AND';
+
+    const nextNode: GroupAwareASTNode = seg.type === 'group' && seg.group
+      ? buildGroupNode(filters, seg.group)
+      : buildFlatAST(filters, seg.startIdx, seg.endIdx);
+
+    if (operator === 'OR') {
+      result = {
+        type: 'bool',
+        bool: {
+          should: [result, nextNode],
+          minimum_should_match: 1
+        }
+      };
+    } else {
+      result = {
+        type: 'bool',
+        bool: {
+          must: [result, nextNode]
+        }
+      };
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Builds a group node from a group definition
+ */
+function buildGroupNode(
+  filters: GroupedFilter[],
+  group: FilterGroupDefinition
+): GroupAwareASTNode {
+  const groupFilters = group.filterIndices
+    .filter(idx => idx < filters.length)
+    .map(idx => ({
+      type: 'filter' as const,
+      filter: toKibanaFilter(filters[idx])
+    }));
+
+  if (groupFilters.length === 0) {
+    return { type: 'filter', filter: { meta: {} } };
+  }
+
+  if (groupFilters.length === 1) {
+    return groupFilters[0];
+  }
+
+  if (group.type === 'OR') {
+    return {
+      type: 'bool',
+      bool: {
+        should: groupFilters,
+        minimum_should_match: 1
+      }
+    };
+  } else {
+    return {
+      type: 'bool',
+      bool: {
+        must: groupFilters
+      }
+    };
+  }
+}
+
+/**
+ * Converts GroupAwareASTNode to Elasticsearch Query DSL
+ */
+export function groupedAstToEsQuery(ast: GroupAwareASTNode | null): any {
+  if (!ast) {
+    return { match_all: {} };
+  }
+
+  if (ast.type === 'filter') {
+    if (!ast.filter) {
+      return { match_all: {} };
+    }
+
+    const query = ast.filter.query || { match_all: {} };
+
+    // Handle negated filters
+    if (ast.filter.meta?.negate) {
+      return {
+        bool: {
+          must_not: [query]
+        }
+      };
+    }
+
+    return query;
+  }
+
+  if (ast.type === 'bool') {
+    const boolClause: any = {};
+
+    if (ast.bool?.must) {
+      const mustQueries = ast.bool.must
+        .map(child => groupedAstToEsQuery(child))
+        .filter(q => q && !isEmptyQuery(q));
+      if (mustQueries.length > 0) {
+        boolClause.must = mustQueries;
+      }
+    }
+
+    if (ast.bool?.should) {
+      const shouldQueries = ast.bool.should
+        .map(child => groupedAstToEsQuery(child))
+        .filter(q => q && !isEmptyQuery(q));
+      if (shouldQueries.length > 0) {
+        boolClause.should = shouldQueries;
+        boolClause.minimum_should_match = ast.bool.minimum_should_match || 1;
+      }
+    }
+
+    if (ast.bool?.must_not) {
+      const mustNotQueries = ast.bool.must_not
+        .map(child => groupedAstToEsQuery(child))
+        .filter(q => q && !isEmptyQuery(q));
+      if (mustNotQueries.length > 0) {
+        boolClause.must_not = mustNotQueries;
+      }
+    }
+
+    if (Object.keys(boolClause).length === 0) {
+      return { match_all: {} };
+    }
+
+    return { bool: boolClause };
+  }
+
+  if (ast.type === 'group') {
+    // Convert group to bool query
+    if (ast.group?.type === 'OR') {
+      const children = (ast.group.children || [])
+        .map(child => groupedAstToEsQuery(child))
+        .filter(q => !isEmptyQuery(q));
+      
+      if (children.length === 0) {
+        return { match_all: {} };
+      }
+      
+      if (children.length === 1) {
+        return children[0];
+      }
+
+      return {
+        bool: {
+          should: children,
+          minimum_should_match: 1
+        }
+      };
+    } else {
+      const children = (ast.group?.children || [])
+        .map(child => groupedAstToEsQuery(child))
+        .filter(q => !isEmptyQuery(q));
+      
+      if (children.length === 0) {
+        return { match_all: {} };
+      }
+      
+      if (children.length === 1) {
+        return children[0];
+      }
+
+      return {
+        bool: {
+          must: children
+        }
+      };
+    }
+  }
+
+  return { match_all: {} };
+}
+
+/**
+ * Main function: Builds ES Query DSL from grouped filters
+ */
+export function buildEsQueryFromGroupedFilters(
+  filters: GroupedFilter[],
+  groups: FilterGroupDefinition[]
+): any {
+  if (!filters || filters.length === 0) {
+    return {
+      query: {
+        match_all: {}
+      }
+    };
+  }
+
+  // Build grouped AST
+  const ast = buildGroupedAST(filters, groups);
+
+  if (!ast) {
+    return {
+      query: {
+        match_all: {}
+      }
+    };
+  }
+
+  // Convert AST to ES query
+  const esQuery = groupedAstToEsQuery(ast);
+
+  return {
+    query: esQuery
   };
 }
 

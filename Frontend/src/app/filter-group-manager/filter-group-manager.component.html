@@ -1,0 +1,150 @@
+<div class="filter-group-manager">
+  <!-- Filter Builder Modal -->
+  <div class="filter-builder-modal" >
+    <div class="filter-builder-overlay" (click)="onFilterBuilderCancelled()"></div>
+    <div class="filter-builder-container">
+      <app-filter-builder
+        [availableFields]="availableFields"
+        [initialRows]="filterBuilderRows"
+        [showPreview]="true"
+        (filtersApplied)="onFilterBuilderApplied($event)"
+        (filtersCleared)="onFilterBuilderCancelled()"
+        (cancelled)="onFilterBuilderCancelled()"
+        (rowsChanged)="onFilterBuilderRowsChanged($event)">
+      </app-filter-builder>
+    </div>
+  </div>
+
+
+
+  <!-- Group Visualization Bar -->
+  <div class="group-visualization" *ngIf="groups.length > 0">
+    <div *ngFor="let group of groups" 
+         class="group-indicator"
+         [class.or-group]="group.type === 'OR'"
+         [class.and-group]="group.type === 'AND'"
+         [style.grid-column]="getGroupColumnSpan(group)">
+      <span class="group-label">{{ group.type }} Group ({{ group.filterIndices.length }} filters)</span>
+      <button class="ungroup-btn" (click)="removeGroup(group.id)" type="button" title="Ungroup">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Group Controls (shown when multiple filters selected) -->
+  <div class="group-controls" *ngIf="selectedIndices.length > 1">
+    <span class="selection-info">{{ selectedIndices.length }} filters selected</span>
+    <div class="group-buttons">
+      <button class="group-btn or-btn" (click)="createGroupFromSelection('OR')" type="button">
+        <span class="btn-icon">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M3.5 6h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </span>
+        Group as OR
+      </button>
+      <button class="group-btn and-btn" (click)="createGroupFromSelection('AND')" type="button">
+        <span class="btn-icon">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M3.5 6h5M6 3.5v5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </span>
+        Group as AND
+      </button>
+      <button class="cancel-btn" (click)="clearSelection()" type="button">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Filter Pills Container -->
+  <div class="filter-pills-container">
+    <ng-container *ngFor="let filter of filters; let i = index">
+      
+      <!-- Separator before filter (except first) -->
+      <div *ngIf="i > 0" class="filter-separator">
+        <div class="separator-line" 
+             [class.group-boundary]="isGroupBoundary(i-1, i)"></div>
+        <span class="separator-label" 
+              [class.or]="getSeparatorType(i) === 'OR'"
+              [class.and]="getSeparatorType(i) === 'AND'"
+              [class.group-boundary]="isGroupBoundary(i-1, i)">
+          {{ getSeparatorType(i) }}
+        </span>
+        <div class="separator-line"
+             [class.group-boundary]="isGroupBoundary(i-1, i)"></div>
+      </div>
+      
+      <!-- Filter Pill -->
+      <div class="filter-pill-wrapper">
+        <!-- Group start indicator -->
+        <div *ngIf="isGroupStart(i)" class="group-bracket group-bracket-start">
+          <span class="bracket-label">{{ getFilterGroup(i)?.type }}</span>
+        </div>
+
+        <!-- Filter Pill -->
+        <div class="filter-pill" 
+             [class.grouped]="isInGroup(i)"
+             [class.group-start]="isGroupStart(i)"
+             [class.group-end]="isGroupEnd(i)"
+             [class.selected]="isSelected(i)"
+             (click)="selectFilter(i, $event)">
+          
+          <!-- Filter Content -->
+          <div class="filter-content">
+            <span class="filter-field">{{ filter.field }}</span>
+            <span class="filter-operator">{{ filter.operator }}</span>
+            <span class="filter-value" *ngIf="filter.value">{{ filter.value }}</span>
+          </div>
+
+          <!-- Filter Actions -->
+          <div class="filter-actions">
+            <!-- Add OR filter button -->
+            <button class="action-btn add-or-btn" 
+                    (click)="createImplicitGroup(i, 'OR'); $event.stopPropagation()"
+                    type="button"
+                    title="Add OR filter">
+              <span class="add-icon">+</span>
+              <span>OR</span>
+            </button>
+            
+            <!-- Add AND filter button -->
+            <button class="action-btn add-and-btn" 
+                    (click)="createImplicitGroup(i, 'AND'); $event.stopPropagation()"
+                    type="button"
+                    title="Add AND filter">
+              <span class="add-icon">+</span>
+              <span>AND</span>
+            </button>
+
+            <!-- Remove filter button -->
+            <button class="action-btn remove-btn" 
+                    (click)="removeFilter(i); $event.stopPropagation()"
+                    type="button"
+                    title="Remove filter">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Group end indicator -->
+        <div *ngIf="isGroupEnd(i)" class="group-bracket group-bracket-end"></div>
+      </div>
+    </ng-container>
+  </div>
+
+  <!-- Preview Section -->
+  <div class="preview-section" *ngIf="filters.length > 0">
+    <label class="preview-label">Query Preview</label>
+    <div class="preview-content">{{ buildPreview() }}</div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="filters.length === 0">
+    <span class="empty-message">No filters applied</span>
+  </div>
+</div>

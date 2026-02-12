@@ -44,11 +44,29 @@
         </button>
     </div>
 
-    <!-- Kibana Filter Bar Component -->
+    <!-- Filter Group Manager Component (shown when clicking Add filter) -->
+    <div class="filter-group-manager-overlay" *ngIf="showFilterBar" (click)="onCloseFilterBar()">
+        <div class="filter-group-manager-container" (click)="$event.stopPropagation()">
+         
+            <app-filter-group-manager
+                [filters]="activeFilters?.filters || []"
+                [groups]="activeFilters?.groups || []"
+                [customLabel]="activeFilters?.customLabel"
+                [availableFields]="availableFields"
+                (groupsChanged)="onGroupsChanged($event)"
+                (filterRemoved)="removeFilter($event)"
+                (filtersChanged)="onFilterGroupChanged($event)"
+                (filterBuilderApplied)="onFilterBuilderApplied($event)"
+                (filterBuilderCancelled)="onCloseFilterBar()">
+            </app-filter-group-manager>
+        </div>
+    </div>
+
+    <!-- Kibana Filter Bar Component (kept for creating new filters) -->
     <app-kibana-filter-bar 
-        [isVisible]="showFilterBar"
+        [isVisible]="showKibanaFilterBar"
         (filtersApplied)="onFiltersApplied($event)"
-        (closeFilterBar)="onCloseFilterBar()">
+        (closeFilterBar)="onCloseKibanaFilterBar()">
     </app-kibana-filter-bar>
 
     <!-- Kibana Data Table -->

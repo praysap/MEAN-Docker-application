@@ -2,7 +2,9 @@ import { Component, OnInit, OnDestroy, Input, Output, EventEmitter } from '@angu
 // import { RestService } from '../../services/rest.service';
 import { environment } from 'src/environments/environment';
 import { Subscription } from 'rxjs';
-import { FilterGroup } from '../filter.model';
+import { FilterGroup, FilterGroupState, GroupedFilter, FilterGroupDefinition } from '../filter.model';
+import { buildEsQueryFromGroupedFilters, buildGroupedAST, groupedAstToEsQuery } from '../utils/kibana-filter-utils';
+import { FilterField, FilterBuilderOutput, FilterRow } from '../filter-builder/filter-builder.model';
 
 @Component({
   selector: 'app-dashboard-filter-wrapper',
@@ -13,8 +15,33 @@ export class DashboardFilterWrapperComponent implements OnInit, OnDestroy {
   @Input() dashboardData: any = { chartAllData: [], BarData: [] };
   @Output() dataUpdated = new EventEmitter<any>();
 
-  showFilterBar: boolean = false;
-  activeFilters: FilterGroup | null = null;
+  showFilterBar: boolean = false; // Controls Filter Group Manager overlay
+  showKibanaFilterBar: boolean = false; // Controls Kibana Filter Bar for creating filters
+  showFilterGroupManager: boolean = true; // Default visible when filters exist
+  activeFilters: FilterGroupState | null = null;
+  showQueryPreview: boolean = false;
+  
+  // Available fields for filter builder
+  availableFields: FilterField[] = [
+    { name: 'timestamp', label: 'Timestamp', type: 'date' },
+    { name: 'source.ip', label: 'Source IP', type: 'ip' },
+    { name: 'destination.ip', label: 'Destination IP', type: 'ip' },
+    { name: 'source.port', label: 'Source Port', type: 'number' },
+    { name: 'destination.port', label: 'Destination Port', type: 'number' },
+    { name: 'protocol', label: 'Protocol', type: 'string' },
+    { name: 'event.action', label: 'Event Action', type: 'string' },
+    { name: 'event.category', label: 'Event Category', type: 'string' },
+    { name: 'event.severity', label: 'Severity', type: 'number' },
+    { name: 'message', label: 'Message', type: 'string' },
+    { name: 'host.name', label: 'Host Name', type: 'string' },
+    { name: 'user.name', label: 'User Name', type: 'string' },
+    { name: 'process.name', label: 'Process Name', type: 'string' },
+    { name: 'file.path', label: 'File Path', type: 'string' },
+    { name: 'network.transport', label: 'Network Transport', type: 'string' },
+    { name: 'url.original', label: 'URL', type: 'string' },
+    { name: 'http.request.method', label: 'HTTP Method', type: 'string' },
+    { name: 'http.response.status_code', label: 'HTTP Status', type: 'number' }
+  ];
   
   snort !: Subscription;
   bin !: Subscription;
@@ -47,13 +74,64 @@ export class DashboardFilterWrapperComponent implements OnInit, OnDestroy {
   }
 
   toggleFilterBar(): void {
+    // Toggle Filter Group Manager overlay when clicking Add filter
     this.showFilterBar = !this.showFilterBar;
   }
 
+  toggleKibanaFilterBar(): void {
+    // Toggle Kibana Filter Bar for creating new filters
+    this.showKibanaFilterBar = !this.showKibanaFilterBar;
+  }
+
+  toggleFilterGroupManager(): void {
+    this.showFilterGroupManager = !this.showFilterGroupManager;
+  }
+
+  onCloseKibanaFilterBar(): void {
+    this.showKibanaFilterBar = false;
+  }
+
+  onFilterGroupChanged(event: FilterGroupState): void {
+    this.activeFilters = event;
+    this.regenerateQueryDSL();
+  }
+
   onFiltersApplied(filterGroup: FilterGroup): void {
-    this.activeFilters = filterGroup;
+    // Convert to FilterGroupState with empty groups
+    this.activeFilters = {
+      filters: filterGroup.filters as GroupedFilter[],
+      groups: [],
+      customLabel: filterGroup.customLabel,
+      queryDSL: filterGroup.queryDSL
+    };
     this.showFilterBar = false;
-    this.loadDashboardData(filterGroup);
+    // Open Filter Group Manager when filters are applied
+    this.showFilterGroupManager = true;
+    this.loadDashboardData(this.activeFilters);
+  }
+
+  onGroupsChanged(groups: FilterGroupDefinition[]): void {
+    if (this.activeFilters) {
+      this.activeFilters.groups = groups;
+      this.regenerateQueryDSL();
+      this.loadDashboardData(this.activeFilters);
+    }
+  }
+
+  toggleQueryPreview(): void {
+    this.showQueryPreview = !this.showQueryPreview;
+  }
+
+  regenerateQueryDSL(): void {
+    if (!this.activeFilters) return;
+    
+    // Use enhanced AST builder with groups
+    const queryDSL = buildEsQueryFromGroupedFilters(
+      this.activeFilters.filters,
+      this.activeFilters.groups || []
+    );
+    
+    this.activeFilters.queryDSL = queryDSL;
   }
 
   onCloseFilterBar(): void {
@@ -70,6 +148,34 @@ export class DashboardFilterWrapperComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Check if filter is in a group and update groups accordingly
+    const filter = this.activeFilters.filters[index];
+    if (filter?.groupMeta?.groupId) {
+      const groupId = filter.groupMeta.groupId;
+      const groupIndex = this.activeFilters.groups?.findIndex(g => g.id === groupId);
+      
+      if (groupIndex !== undefined && groupIndex >= 0 && this.activeFilters.groups) {
+        const group = this.activeFilters.groups[groupIndex];
+        const updatedIndices = group.filterIndices
+          .filter(idx => idx !== index)
+          .map(idx => idx > index ? idx - 1 : idx);
+        
+        if (updatedIndices.length < 2) {
+          // Remove group if less than 2 filters
+          this.activeFilters.groups.splice(groupIndex, 1);
+          // Clear group metadata from remaining filter
+          updatedIndices.forEach(idx => {
+            if (this.activeFilters && this.activeFilters.filters[idx]) {
+              this.activeFilters.filters[idx].groupMeta = undefined;
+            }
+          });
+        } else {
+          // Update group
+          group.filterIndices = updatedIndices;
+        }
+      }
+    }
+
     // Remove the filter at the specified index
     this.activeFilters.filters.splice(index, 1);
 
@@ -79,8 +185,8 @@ export class DashboardFilterWrapperComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Regenerate Query DSL
-    this.generateQueryDSLFromFilters();
+    // Regenerate Query DSL with groups
+    this.regenerateQueryDSL();
 
     // Reload data with updated filters
     this.loadDashboardData(this.activeFilters);
@@ -217,6 +323,33 @@ export class DashboardFilterWrapperComponent implements OnInit, OnDestroy {
   onDataTableLoaded(data: any): void {
     // Handle data table loaded event if needed
     console.log('Data table loaded:', data);
+  }
+
+  /**
+   * Handles filter builder output when filters are applied
+   */
+  onFilterBuilderApplied(output: FilterBuilderOutput): void {
+    // Convert FilterBuilderOutput to FilterGroupState
+    const groupedFilters: GroupedFilter[] = output.rows.map((row, index) => ({
+      field: row.clause.field,
+      operator: row.clause.operator,
+      value: row.clause.values || row.clause.value,
+      logic: row.logicOperator,
+      minValue: row.clause.minValue,
+      maxValue: row.clause.maxValue,
+      minOperator: row.clause.minOperator,
+      maxOperator: row.clause.maxOperator
+    }));
+
+    this.activeFilters = {
+      filters: groupedFilters,
+      groups: [], // Groups are represented in the AST, not as explicit groups
+      queryDSL: output.queryDSL
+    };
+
+    this.regenerateQueryDSL();
+    this.loadDashboardData(this.activeFilters);
+    this.onCloseFilterBar();
   }
 
   ngOnDestroy(): void {

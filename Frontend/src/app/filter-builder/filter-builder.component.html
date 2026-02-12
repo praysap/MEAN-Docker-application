@@ -1,0 +1,217 @@
+<div class="filter-builder">
+  <!-- Header -->
+  <div class="filter-builder-header">
+    <h3 class="title">Build Filter</h3>
+    <div class="subtitle">Create complex filter expressions with AND/OR logic</div>
+  </div>
+
+  <!-- Filter Rows Container -->
+  <div class="filter-rows-container">
+    <div 
+      *ngFor="let row of rows; let i = index; let first = first; let last = last"
+      class="filter-row-wrapper"
+      [class.first-row]="first"
+      [class.has-logic-operator]="!first">
+      
+      <!-- Logic Operator (between rows) -->
+      <div class="logic-operator-section" *ngIf="!first">
+        <div class="logic-operator-label">Then</div>
+        <div class="logic-operator-buttons">
+          <button 
+            class="logic-btn"
+            [class.and]="row.logicOperator === 'AND' || !row.logicOperator"
+            [class.active]="row.logicOperator === 'AND' || !row.logicOperator"
+            (click)="updateLogicOperator(i, 'AND')"
+            type="button">
+            AND
+          </button>
+          <button 
+            class="logic-btn"
+            [class.or]="row.logicOperator === 'OR'"
+            [class.active]="row.logicOperator === 'OR'"
+            (click)="updateLogicOperator(i, 'OR')"
+            type="button">
+            OR
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter Row -->
+      <div class="filter-row" [class.invalid]="!isRowValid(row) && row.clause.field">
+        
+        <!-- Row Number -->
+        <div class="row-number">{{ i + 1 }}</div>
+
+        <!-- Field Selection -->
+        <div class="field-section">
+          <label class="field-label">Field</label>
+          <select 
+            class="field-select"
+            [value]="row.clause.field"
+            (change)="updateField(i, $any($event.target).value)">
+            <option value="">Select field...</option>
+            <option *ngFor="let field of availableFields" [value]="field.name">
+              {{ field.label }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Operator Selection -->
+        <div class="operator-section">
+          <label class="field-label">Operator</label>
+          <select 
+            class="operator-select"
+            [value]="row.clause.operator"
+            (change)="updateOperator(i, $any($event.target).value)">
+            <option *ngFor="let op of getOperatorsForField(row.clause.field)" [value]="op.value">
+              {{ op.label }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Value Input -->
+        <div class="value-section" *ngIf="needsValue(row)">
+          <label class="field-label">Value</label>
+          
+          <!-- Single Value Input -->
+          <ng-container *ngIf="!supportsMultipleValues(row) && !isRangeOperator(row)">
+            <input 
+              type="text"
+              class="value-input"
+              [value]="row.clause.value || ''"
+              (input)="updateValue(i, $any($event.target).value)"
+              placeholder="Enter value...">
+          </ng-container>
+
+          <!-- Multi-Value Input -->
+          <ng-container *ngIf="supportsMultipleValues(row)">
+            <div class="multi-value-input">
+              <div class="values-list" *ngIf="row.clause.values && row.clause.values.length > 0">
+                <span class="value-tag" *ngFor="let val of row.clause.values">
+                  {{ val }}
+                  <button class="remove-value-btn" (click)="removeMultiValue(i, val)" type="button">×</button>
+                </span>
+              </div>
+              <input 
+                type="text"
+                class="value-input"
+                placeholder="Add value and press Enter..."
+                (keydown.enter)="addMultiValue(i, $any($event.target).value); $any($event.target).value = ''">
+            </div>
+          </ng-container>
+
+          <!-- Range Input -->
+          <ng-container *ngIf="isRangeOperator(row)">
+            <div class="range-inputs">
+              <input 
+                type="text"
+                class="range-input"
+                [value]="row.clause.minValue || ''"
+                (input)="updateRangeValue(i, 'min', $any($event.target).value)"
+                placeholder="Min">
+              <span class="range-separator">to</span>
+              <input 
+                type="text"
+                class="range-input"
+                [value]="row.clause.maxValue || ''"
+                (input)="updateRangeValue(i, 'max', $any($event.target).value)"
+                placeholder="Max">
+            </div>
+          </ng-container>
+        </div>
+
+        <!-- Row Actions -->
+        <div class="row-actions">
+  
+          <button 
+            class="action-btn remove-btn"
+            (click)="removeRow(i)"
+            type="button"
+            title="Remove"
+            [disabled]="rows.length === 1">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Add Buttons Row -->
+      <div class="add-buttons-row">
+        <button 
+          class="add-filter-btn add-and"
+          (click)="addRow(i, 'AND')"
+          type="button">
+          <span class="add-icon">+</span>
+          <span>Add AND</span>
+        </button>
+        <button 
+          class="add-filter-btn add-or"
+          (click)="addRow(i, 'OR')"
+          type="button">
+          <span class="add-icon">+</span>
+          <span>Add OR</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Preview Section -->
+  <div class="preview-section" *ngIf="showPreview && preview">
+    <div class="preview-header">
+      <label class="preview-label">Query Preview</label>
+      <span class="preview-hint">Updates in real-time</span>
+    </div>
+    <div class="preview-content">
+      <code class="preview-code">{{ preview || 'Add filters to see preview...' }}</code>
+    </div>
+    <div class="preview-stats" *ngIf="rows.length > 0">
+      <span class="stat">{{ getValidRowCount() }} of {{ rows.length }} filters valid</span>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="rows.length === 0">
+    <div class="empty-icon">
+      <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+        <circle cx="24" cy="24" r="20" stroke="#d3dae6" stroke-width="2"/>
+        <path d="M16 24h16M24 16v16" stroke="#d3dae6" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="empty-message">No filters added yet</div>
+    <button class="add-first-btn" (click)="addRow()" type="button">
+      <span class="add-icon">+</span>
+      Add First Filter
+    </button>
+  </div>
+
+  <!-- Footer Actions -->
+  <div class="filter-builder-footer">
+    <div class="footer-info">
+      <span class="filter-count" *ngIf="getValidRowCount() > 0">
+        {{ getValidRowCount() }} filter{{ getValidRowCount() !== 1 ? 's' : '' }}
+      </span>
+    </div>
+    <div class="footer-actions">
+      <button 
+        class="btn btn-secondary"
+        (click)="clearFilters()"
+        type="button">
+        Clear
+      </button>
+      <button 
+        class="btn btn-secondary"
+        (click)="cancel()"
+        type="button">
+        Cancel
+      </button>
+      <button 
+        class="btn btn-primary"
+        (click)="applyFilters()"
+        type="button"
+        [disabled]="getValidRowCount() === 0">
+        Apply Filters
+      </button>
+    </div>
+  </div>
+</div>
